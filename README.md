@@ -7,16 +7,27 @@
 
 ## Using [`pixi`](https://pixi.sh/) as a build tool.
 
-Set up a new project:
+This has all be done. Below are the steps followed:
+
+1. Set up a new project:
 ```console
 $ pixi init --format pyproject
 ```
-Add a package (e.g. [`dlt`](https://dlthub.com/docs/intro))
+
+2. Add a package (e.g. [`dlt`](https://dlthub.com/docs/intro))
 ```console
-$ pixi add dlt
+$ pixi add dlt        # For data ingestion
+$ pixi add duckdb     # For data storage
+$ pixi add streamlit  # For plotting/dashboarding
 ```
 
 ## Using [`dlt`](https://dlthubl.com) to grab SLURM REST API Data:
+
+Next, we want a way to be able to download data into a database from
+a REST API. We can do that with [`dlt`](https://dlthub.com/docs/intro).
+
 ```console
 $ pixi run dlt init rest_api duckdb
 ```
+
+Next, we use the example to get stuff from GitHub.
