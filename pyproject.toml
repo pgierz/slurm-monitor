@@ -17,9 +17,12 @@ platforms = ["osx-arm64"]
 slurm_monitoring = { path = ".", editable = true }
 
 [tool.pixi.tasks]
+slurm-pipeline = "python slurm_pipeline.py"
 
 [tool.pixi.dependencies]
 dlt = ">=1.5.0,<2"
 streamlit = ">=1.44.1,<2"
 duckdb = ">=1.2.2,<2"
+paramiko = ">=3.5.1,<4"
+loguru = ">=0.7.2,<0.8"
 
