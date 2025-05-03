@@ -42,7 +42,7 @@ $ pixi add duckdb     # For data storage
 $ pixi add streamlit  # For plotting/dashboarding
 ```
 
-### Using [`dlt`](https://dlthubl.com) to grab SLURM REST API Data:
+### Using [`dlt`](https://dlthub.com) to grab SLURM REST API Data:
 
 Next, we want a way to be able to download data into a database from
 a REST API. We can do that with [`dlt`](https://dlthub.com/docs/intro).
