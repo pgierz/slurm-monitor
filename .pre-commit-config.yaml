@@ -10,3 +10,9 @@ repos:
     rev: v0.4.0
     hooks:
       - id: ruff
+  - repo: local
+    hooks:
+      - id: pixi-dependency-sync
+        name: Pixi Dependency Sync
+        entry: python ./dev/pyproject_check_dependencies.py
+        language: system
