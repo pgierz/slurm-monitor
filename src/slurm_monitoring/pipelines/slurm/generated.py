@@ -1,4 +1,5 @@
 import json
+import os
 import pdb
 from typing import List
 
@@ -499,13 +500,14 @@ def slurm_source(
     # [FIXME] This belongs somewhere else...
     # Interactively call the requests "raw" first, to
     # see their responses...
-    for resource in source_config["resources"]:
-        manual_get(
-            resource,
-            username,
-            token,
-            base_url,
-        )
+    if os.environ.get("DEBUG_SLURM_DLT"):
+        for resource in source_config["resources"]:
+            manual_get(
+                resource,
+                username,
+                token,
+                base_url,
+            )
 
     try:
         resources = rest_api_resources(source_config)
