@@ -406,35 +406,35 @@ def slurm_source(
                     },
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_get_nodes",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/nodes",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_node",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/node/{node_name}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "node_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_nodes",
-            #                 "field": "node_name",
-            #             },
-            #         },
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_get_nodes",
+                "table_name": "v0_0_38_nodes_overview",
+                "endpoint": {
+                    "data_selector": "nodes",
+                    "path": "/slurm/v0.0.38/nodes",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_node",
+                "table_name": "v0_0_38_nodes",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurm/v0.0.38/node/{name}",
+                    "paginator": "single_page",
+                    "params": {
+                        "name": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_nodes",
+                            "field": "name",
+                        },
+                    },
+                },
+            },
             # {
             #     "name": "slurm_v0_0_38_get_partitions",
             #     "table_name": "v0_0_38_error",
