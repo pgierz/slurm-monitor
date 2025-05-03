@@ -1,9 +1,9 @@
 # A SLURM Monitoring Dashboard
-> Build with things we learned at PyConDE 2025  
+> Build with things we learned at PyConDE 2025
 >
-> The HPC Team  
-> Alfred Wegener Institute for Polar and Marine Research  
-> Bremerhaven, Germany  
+> The HPC Team
+> Alfred Wegener Institute for Polar and Marine Research
+> Bremerhaven, Germany
 
 ## Install
 Not sure how the install for this works out yet. Probably via `pip`?
@@ -22,7 +22,7 @@ $ slurm-monitor
 If you have a source-install and are using `pixi`:
 ```console
 $ pixi run slurm-monitor
-``` 
+```
 
 ## Learning from PyConDE 2025
 
