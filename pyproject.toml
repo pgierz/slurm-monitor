@@ -2,11 +2,11 @@
 authors = [{name = "Paul Gierz", email = "paul.gierz@awi.de"}]
 # [TODO]: It would be good to see if this can be removed, or if it is "separate"
 #         from what is listed in [tool.pixi.dependencies]
-# 
+#
 #         After some more research, it seems that the dependencies listed **must**
 #         be listed in both places. The [tool.pixi.dependencies] is used **solely**
 #         for the pixi environment definition, and is not carried over when you want
-#         to build a wheel or sdist for pypi. 
+#         to build a wheel or sdist for pypi.
 #
 #         See GH Issue #3
 dependencies = [
@@ -42,7 +42,7 @@ dlt = ">=1.10.0,<2"
 # in [project.scripts]
 slurm-monitor = "python -m slurm_monitoring.cli"
 # The rest are specific tasks in pixi:
-slurm-pipeline = "python -m slurm_monitoring.cli pipeline slurm.remote run" 
+slurm-pipeline = "python -m slurm_monitoring.cli pipeline slurm.remote run"
 examples-config = "python examples/config_example.py"
 examples-duckdb = "python examples/show_duckdb_example.py"
 
@@ -53,3 +53,10 @@ paramiko = ">=3.5.1,<4"
 loguru = ">=0.7.2,<0.8"
 click = ">=8.1.8,<9"
 requests = ">=2.32.3,<3"
+
+[tool.pixi.environments.dev]
+features = ["dev"]
+
+[tool.pixi.feature.dev.dependencies]
+pre-commit = "*"
+ruff = "*"

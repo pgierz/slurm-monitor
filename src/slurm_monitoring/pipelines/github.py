@@ -2,8 +2,7 @@ from typing import Any, Optional
 
 import dlt
 from dlt.common.pendulum import pendulum
-from dlt.sources.rest_api import (RESTAPIConfig, check_connection,
-                                  rest_api_resources, rest_api_source)
+from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
 
 
 @dlt.source(name="github")
