@@ -1,3 +1,5 @@
+import json
+import os
 import pdb
 from typing import List
 
@@ -61,11 +63,10 @@ def manual_get(
     # Check the response
     if response.status_code == 200:
         logger.success(f"Pinged SLURM API {path} successfully!")
-        logger.success(f"Response: {response.json()}")
+        logger.success(f"Response: {json.dumps(response.json(), indent=2)}")
     else:
         logger.error(f"Failed to get {path} from SLURM API!")
-        logger.error(f"Response: {response.json()}")
-        response.raise_for_status()
+        logger.error(f"Response: {json.dumps(response.json(), indent=2)}")
     return response
 
 
@@ -288,43 +289,43 @@ def slurm_source(
             #         "paginator": "auto",
             #     },
             # },
-            {
-                "name": "slurmdb_v0_0_38_get_jobs",
-                "table_name": "dbv0_0_38_error",
-                "endpoint": {
-                    "data_selector": "errors",
-                    "path": "/slurmdb/v0.0.38/jobs",
-                    "params": {
-                        # the parameters below can optionally be configured
-                        # "submit_time": "OPTIONAL_CONFIG",
-                        # "start_time": "OPTIONAL_CONFIG",
-                        # "end_time": "OPTIONAL_CONFIG",
-                        # "account": "OPTIONAL_CONFIG",
-                        # "association": "OPTIONAL_CONFIG",
-                        # "cluster": "OPTIONAL_CONFIG",
-                        # "constraints": "OPTIONAL_CONFIG",
-                        # "cpus_max": "OPTIONAL_CONFIG",
-                        # "cpus_min": "OPTIONAL_CONFIG",
-                        # "skip_steps": "OPTIONAL_CONFIG",
-                        # "disable_wait_for_result": "OPTIONAL_CONFIG",
-                        # "exit_code": "OPTIONAL_CONFIG",
-                        # "format": "OPTIONAL_CONFIG",
-                        # "group": "OPTIONAL_CONFIG",
-                        # "job_name": "OPTIONAL_CONFIG",
-                        # "nodes_max": "OPTIONAL_CONFIG",
-                        # "nodes_min": "OPTIONAL_CONFIG",
-                        # "partition": "OPTIONAL_CONFIG",
-                        # "qos": "OPTIONAL_CONFIG",
-                        # "reason": "OPTIONAL_CONFIG",
-                        # "reservation": "OPTIONAL_CONFIG",
-                        # "state": "OPTIONAL_CONFIG",
-                        # "step": "OPTIONAL_CONFIG",
-                        # "node": "OPTIONAL_CONFIG",
-                        # "wckey": "OPTIONAL_CONFIG",
-                    },
-                    "paginator": "auto",
-                },
-            },
+            # {
+            #     "name": "slurmdb_v0_0_38_get_jobs",
+            #     "table_name": "dbv0_0_38_error",
+            #     "endpoint": {
+            #         "data_selector": "errors",
+            #         "path": "/slurmdb/v0.0.38/jobs",
+            #         "params": {
+            #             # the parameters below can optionally be configured
+            #             # "submit_time": "OPTIONAL_CONFIG",
+            #             # "start_time": "OPTIONAL_CONFIG",
+            #             # "end_time": "OPTIONAL_CONFIG",
+            #             # "account": "OPTIONAL_CONFIG",
+            #             # "association": "OPTIONAL_CONFIG",
+            #             # "cluster": "OPTIONAL_CONFIG",
+            #             # "constraints": "OPTIONAL_CONFIG",
+            #             # "cpus_max": "OPTIONAL_CONFIG",
+            #             # "cpus_min": "OPTIONAL_CONFIG",
+            #             # "skip_steps": "OPTIONAL_CONFIG",
+            #             # "disable_wait_for_result": "OPTIONAL_CONFIG",
+            #             # "exit_code": "OPTIONAL_CONFIG",
+            #             # "format": "OPTIONAL_CONFIG",
+            #             # "group": "OPTIONAL_CONFIG",
+            #             # "job_name": "OPTIONAL_CONFIG",
+            #             # "nodes_max": "OPTIONAL_CONFIG",
+            #             # "nodes_min": "OPTIONAL_CONFIG",
+            #             # "partition": "OPTIONAL_CONFIG",
+            #             # "qos": "OPTIONAL_CONFIG",
+            #             # "reason": "OPTIONAL_CONFIG",
+            #             # "reservation": "OPTIONAL_CONFIG",
+            #             # "state": "OPTIONAL_CONFIG",
+            #             # "step": "OPTIONAL_CONFIG",
+            #             # "node": "OPTIONAL_CONFIG",
+            #             # "wckey": "OPTIONAL_CONFIG",
+            #         },
+            #         "paginator": "auto",
+            #     },
+            # },
             # {
             #     "name": "slurmdb_v0_0_38_get_cluster",
             #     "table_name": "v0",
@@ -350,33 +351,24 @@ def slurm_source(
             #         "paginator": "auto",
             #     },
             # },
-            # {
-            #     "name": "slurm_v0_0_38_diag",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/diag",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_slurmctld_get_licenses",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/licenses",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_ping",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/ping",
-            #         "paginator": "single_page",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_diag",
+                "table_name": "v0_0_38_diag",
+                "endpoint": {
+                    "data_selector": "statistics",
+                    "path": "/slurm/v0.0.38/diag",
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_slurmctld_get_licenses",
+                "table_name": "v0_0_38_licenses",
+                "endpoint": {
+                    "data_selector": "licenses",
+                    "path": "/slurm/v0.0.38/licenses",
+                    "paginator": "auto",
+                },
+            },
             {
                 "name": "slurm_v0_0_38_ping",
                 "table_name": "v0_0_38_ping",
@@ -386,135 +378,136 @@ def slurm_source(
                     "paginator": "single_page",
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_get_jobs",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/jobs",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_job",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/job/{job_id}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "job_id": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_jobs",
-            #                 "field": "job_id",
-            #             }
-            #         },
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_nodes",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/nodes",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_node",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/node/{node_name}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "node_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_nodes",
-            #                 "field": "node_name",
-            #             },
-            #         },
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_partitions",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/partitions",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_partition",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/partition/{partition_name}",
-            #         "params": {
-            #             "partition_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_partitions",
-            #                 "field": "partition_name",
-            #             },
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_reservations",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/reservations",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_reservation",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/reservation/{reservation_name}",
-            #         "params": {
-            #             "reservation_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_reservations",
-            #                 "field": "reservation_name",
-            #             },
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_get_jobs",
+                "table_name": "v0_0_38_jobs_overview",
+                "endpoint": {
+                    "data_selector": "jobs",
+                    "path": "/slurm/v0.0.38/jobs",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "single_page",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_job",
+                "table_name": "v0_0_38_jobs",
+                "endpoint": {
+                    "data_selector": "jobs",
+                    "path": "/slurm/v0.0.38/job/{job_id}",
+                    "paginator": "single_page",
+                    "params": {
+                        "job_id": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_jobs",
+                            "field": "job_id",
+                        }
+                    },
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_nodes",
+                "table_name": "v0_0_38_nodes_overview",
+                "endpoint": {
+                    "data_selector": "nodes",
+                    "path": "/slurm/v0.0.38/nodes",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "single_page",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_node",
+                "table_name": "v0_0_38_nodes",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurm/v0.0.38/node/{name}",
+                    "paginator": "single_page",
+                    "params": {
+                        "name": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_nodes",
+                            "field": "name",
+                        },
+                    },
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_partitions",
+                "table_name": "v0_0_38_partitions_overview",
+                "endpoint": {
+                    "data_selector": "partitions",
+                    "path": "/slurm/v0.0.38/partitions",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "single_page",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_partition",
+                "table_name": "v0_0_38_partition",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurm/v0.0.38/partition/{partition_name}",
+                    "params": {
+                        "partition_name": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_partitions",
+                            "field": "name",
+                        },
+                    },
+                    "paginator": "single_page",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_reservations",
+                "table_name": "v0_0_38_reservations_overview",
+                "endpoint": {
+                    "data_selector": "reservations",
+                    "path": "/slurm/v0.0.38/reservations",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "single_page",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_reservation",
+                "table_name": "v0_0_38_reservation",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurm/v0.0.38/reservation/{reservation_name}",
+                    "params": {
+                        "reservation_name": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_reservations",
+                            "field": "name",
+                        },
+                    },
+                    "paginator": "single_page",
+                },
+            },
         ],
     }
 
     # [FIXME] This belongs somewhere else...
     # Interactively call the requests "raw" first, to
     # see their responses...
-    for resource in source_config["resources"]:
-        manual_get(
-            resource,
-            username,
-            token,
-            base_url,
-        )
+    if os.environ.get("DEBUG_SLURM_DLT"):
+        for resource in source_config["resources"]:
+            manual_get(
+                resource,
+                username,
+                token,
+                base_url,
+            )
 
     try:
         resources = rest_api_resources(source_config)
