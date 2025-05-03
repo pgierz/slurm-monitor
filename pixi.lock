@@ -2464,7 +2464,7 @@ packages:
 - pypi: .
   name: slurm-monitoring
   version: 0.1.0
-  sha256: eacb900d135a3450201b398c301ec403cf1d24cbc0dd560b53f92d5f8ed5c438
+  sha256: dd138e86daa6edddc529cdaaa0940d0b29681e2df2c2670ed1d696c758b7fc70
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/smmap-5.0.2-pyhd8ed1ab_0.conda
