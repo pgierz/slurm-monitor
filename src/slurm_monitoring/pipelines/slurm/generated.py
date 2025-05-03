@@ -359,24 +359,15 @@ def slurm_source(
                     "paginator": "auto",
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_slurmctld_get_licenses",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/licenses",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_ping",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/ping",
-            #         "paginator": "single_page",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_slurmctld_get_licenses",
+                "table_name": "v0_0_38_error",
+                "endpoint": {
+                    "data_selector": "licenses",
+                    "path": "/slurm/v0.0.38/licenses",
+                    "paginator": "auto",
+                },
+            },
             {
                 "name": "slurm_v0_0_38_ping",
                 "table_name": "v0_0_38_ping",
