@@ -13,22 +13,25 @@ $ pip install git+https://github.com/pgierz/slurm-monitor.git
 
 ## Usage
 If you have a "real" install, you should be able to do:
-
 ```console
 $ slurm-monitor
 ```
-
 
 If you have a source-install and are using `pixi`:
 ```console
 $ pixi run slurm-monitor
 ```
 
+Examine the database:
+```console
+$ pixi run slurm-dbshow 
+```
+
 ## Learning from PyConDE 2025
 
 ### Using [`pixi`](https://pixi.sh/) as a build tool.
 
-This has all be done. Below are the steps followed:
+This has all been done. Below are the steps followed:
 
 1. Set up a new project:
 ```console
