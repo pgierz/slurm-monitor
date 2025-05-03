@@ -461,38 +461,38 @@ def slurm_source(
                             "field": "name",
                         },
                     },
-                    "paginator": "auto",
+                    "paginator": "single_page",
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_get_reservations",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/reservations",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_reservation",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/reservation/{reservation_name}",
-            #         "params": {
-            #             "reservation_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_reservations",
-            #                 "field": "reservation_name",
-            #             },
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_get_reservations",
+                "table_name": "v0_0_38_reservations_overview",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurm/v0.0.38/reservations",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "single_page",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_reservation",
+                "table_name": "v0_0_38_reservation",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurm/v0.0.38/reservation/{reservation_name}",
+                    "params": {
+                        "reservation_name": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_reservations",
+                            "field": "name",
+                        },
+                    },
+                    "paginator": "single_page",
+                },
+            },
         ],
     }
 
