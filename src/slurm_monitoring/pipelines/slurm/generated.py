@@ -350,15 +350,15 @@ def slurm_source(
             #         "paginator": "auto",
             #     },
             # },
-            # {
-            #     "name": "slurm_v0_0_38_diag",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/diag",
-            #         "paginator": "auto",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_diag",
+                "table_name": "v0_0_38_diag",
+                "endpoint": {
+                    "data_selector": "statistics",
+                    "path": "/slurm/v0.0.38/diag",
+                    "paginator": "auto",
+                },
+            },
             # {
             #     "name": "slurm_v0_0_38_slurmctld_get_licenses",
             #     "table_name": "v0_0_38_error",
