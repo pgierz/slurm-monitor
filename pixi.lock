@@ -2779,8 +2779,8 @@ packages:
   timestamp: 1733381032766
 - pypi: .
   name: slurm-monitoring
-  version: 0.1.0
-  sha256: 1f4003765b152742db9dedd02a0524afac223c4b37cec42b9932149eb6b39674
+  version: 0.2.0
+  sha256: 85744ecb9b10bd61f55763339516224b50c5182dbd827d6598d42aeb636dca29
   requires_dist:
   - streamlit>=1.44.1,<2
   - duckdb>=1.2.2,<2

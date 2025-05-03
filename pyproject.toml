@@ -42,9 +42,10 @@ dlt = ">=1.10.0,<2"
 # in [project.scripts]
 slurm-monitor = "python -m slurm_monitoring.cli"
 # The rest are specific tasks in pixi:
-slurm-pipeline = "python -m slurm_monitoring.cli pipeline slurm.remote run"
 examples-config = "python examples/config_example.py"
 examples-duckdb = "python examples/show_duckdb_example.py"
+slurm-dbshow = "dlt pipeline slurm_pipeline show"
+slurm-pipeline = "python -m slurm_monitoring.cli pipeline slurm.remote run"
 
 [tool.pixi.dependencies]
 streamlit = ">=1.44.1,<2"
