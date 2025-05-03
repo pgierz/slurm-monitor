@@ -2,7 +2,22 @@
 authors = [{name = "Paul Gierz", email = "paul.gierz@awi.de"}]
 # [TODO]: It would be good to see if this can be removed, or if it is "separate"
 #         from what is listed in [tool.pixi.dependencies]
-dependencies = []
+# 
+#         After some more research, it seems that the dependencies listed **must**
+#         be listed in both places. The [tool.pixi.dependencies] is used **solely**
+#         for the pixi environment definition, and is not carried over when you want
+#         to build a wheel or sdist for pypi. 
+#
+#         See GH Issue #3
+dependencies = [
+  streamlit = ">=1.44.1,<2",
+  duckdb = ">=1.2.2,<2",
+  paramiko = ">=3.5.1,<4",
+  loguru = ">=0.7.2,<0.8",
+  click = ">=8.1.8,<9",
+  requests = ">=2.32.3,<3",
+]
+
 name = "slurm-monitoring"
 requires-python = ">= 3.11"
 version = "0.1.0"
