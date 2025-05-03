@@ -5,7 +5,28 @@
 > Alfred Wegener Institute for Polar and Marine Research  
 > Bremerhaven, Germany  
 
-## Using [`pixi`](https://pixi.sh/) as a build tool.
+## Install
+Not sure how the install for this works out yet. Probably via `pip`?
+```
+$ pip install git+https://github.com/pgierz/slurm-monitor.git
+```
+
+## Usage
+If you have a "real" install, you should be able to do:
+
+```console
+$ slurm-monitor
+```
+
+
+If you have a source-install and are using `pixi`:
+```console
+$ pixi run slurm-monitor
+``` 
+
+## Learning from PyConDE 2025
+
+### Using [`pixi`](https://pixi.sh/) as a build tool.
 
 This has all be done. Below are the steps followed:
 
@@ -21,7 +42,7 @@ $ pixi add duckdb     # For data storage
 $ pixi add streamlit  # For plotting/dashboarding
 ```
 
-## Using [`dlt`](https://dlthubl.com) to grab SLURM REST API Data:
+### Using [`dlt`](https://dlthubl.com) to grab SLURM REST API Data:
 
 Next, we want a way to be able to download data into a database from
 a REST API. We can do that with [`dlt`](https://dlthub.com/docs/intro).
