@@ -1,6 +1,7 @@
 name: 🐛 Bug Report
 description: Report a reproducible bug or unexpected behavior
 labels: [fix]
+title: "[fix]: "
 body:
   - type: input
     id: title
