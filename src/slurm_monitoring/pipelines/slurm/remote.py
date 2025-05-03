@@ -28,12 +28,14 @@ class SlurmEndpointError(SlurmRestAPIError):
     """Error when contacting the slurm endpoint"""
 
     endpoint = "slurm"
+    name = "slurm"
 
 
 class SlurmdbEndpointError(SlurmRestAPIError):
     """Error when contacting the slurmdb endpoint"""
 
     endpoint = "slurmdb"
+    name = "slurmdb"
 
 
 class SSHTunnel:
@@ -222,6 +224,7 @@ class SSHTunnel:
             kwargs["username"] = self.slurm_username
         if self.slurm_jwt_token:
             kwargs["token"] = self.slurm_jwt_token
+        logger.debug(f"--> Running {func.__name__} through {self.ssh_host}")
         rval = func(*args, **kwargs)
         if not tunnel_was_already_running:
             self.stop()
@@ -371,6 +374,12 @@ def get_ssh_config():
     }
 
 
+def handle_endpoint_error(tunnel, e):
+    logger.error(f"...failed to use REST API for endpoint: {e.endpoint}")
+    tunnel.execute_command("sinfo && scontrol ping")
+    logger.info(f"...using SLURM CLI for SLURM data ingestion: {e.name}")
+
+
 def run():
     logger.info("Starting **REMOTE** SLURM Ingestion Pipeline...")
     ssh_config = get_ssh_config()
@@ -379,19 +388,21 @@ def run():
     #        we prefer REST over CLI, hard-coded.
     try:
         ssh_tunnel.generate_slurm_token()
-        for ping in (
-            ping_slurm_api,
-            ping_slurmdb_api,
-        ):
-            ssh_tunnel.run_func(ping)
-        logger.info("...using REST API for SLURM data ingestion.")
+        ssh_tunnel.run_func(ping_slurm_api)
         slurm_data_ingestion_backend = "rest"
-    except (SlurmEndpointError, SlurmdbEndpointError) as e:
-        logger.error(f"...failed to use REST API for endpoint: {e.endpoint}")
-        ssh_tunnel.execute_command("sinfo && scontrol ping")
-        logger.info("...using SLURM CLI for SLURM data ingestion.")
+    except SlurmEndpointError as e:
+        handle_endpoint_error(ssh_tunnel, e)
         slurm_data_ingestion_backend = "cli"
-    logger.info(f"...set ingestion backend to: {slurm_data_ingestion_backend}")
+    try:
+        ssh_tunnel.generate_slurm_token()
+        ssh_tunnel.run_func(ping_slurmdb_api)
+        slurmdb_data_ingestion_backend = "rest"
+    except SlurmdbEndpointError as e:
+        handle_endpoint_error(ssh_tunnel, e)
+        slurmdb_data_ingestion_backend = "cli"
+    logger.info("...set ingestion backends: ")
+    logger.info(f"{slurm_data_ingestion_backend=}")
+    logger.info(f"{slurmdb_data_ingestion_backend=}")
 
     # Create the OpenAPI spec for the SLURM API
     openapi_response = ssh_tunnel.run_func(get_slurm_openapi_spec)
