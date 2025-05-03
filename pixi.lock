@@ -219,6 +219,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/bcrypt-4.3.0-py313hdde674f_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/blinker-1.9.0-pyhff2d567_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/brotli-python-1.1.0-py313h3579c5c_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bumpversion-0.5.3-pyhd8ed1ab_1002.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/bzip2-1.0.8-h99b78c6_7.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/c-ares-1.34.5-h5505292_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2025.4.26-hbd8a1cb_0.conda
@@ -702,6 +703,17 @@ packages:
   - pkg:pypi/brotli?source=hash-mapping
   size: 339067
   timestamp: 1725268603536
+- conda: https://conda.anaconda.org/conda-forge/noarch/bumpversion-0.5.3-pyhd8ed1ab_1002.conda
+  sha256: bc66c7a45876cb9b34acbd0f099a67767e1418e1ce56efb9cf83c4c3230d2694
+  md5: e7b5468743560ae618981b6931419abd
+  depends:
+  - python >=3.9
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/bumpversion?source=hash-mapping
+  size: 21463
+  timestamp: 1735835599220
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/bzip2-1.0.8-h99b78c6_7.conda
   sha256: adfa71f158cbd872a36394c56c3568e6034aa55c623634b37a4836bd036e6b91
   md5: fc6948412dbbbe9a4c9ddbbcfe0a79ab
@@ -2768,7 +2780,7 @@ packages:
 - pypi: .
   name: slurm-monitoring
   version: 0.1.0
-  sha256: 7960ffe5a8917c2f633a1bab84819cfc46fea64364a24a633eb2f13d8b9371e8
+  sha256: 1f4003765b152742db9dedd02a0524afac223c4b37cec42b9932149eb6b39674
   requires_dist:
   - streamlit>=1.44.1,<2
   - duckdb>=1.2.2,<2
