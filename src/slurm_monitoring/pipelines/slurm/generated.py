@@ -1,3 +1,4 @@
+import json
 import pdb
 from typing import List
 
@@ -61,11 +62,10 @@ def manual_get(
     # Check the response
     if response.status_code == 200:
         logger.success(f"Pinged SLURM API {path} successfully!")
-        logger.success(f"Response: {response.json()}")
+        logger.success(f"Response: {json.dumps(response.json(), indent=2)}")
     else:
         logger.error(f"Failed to get {path} from SLURM API!")
-        logger.error(f"Response: {response.json()}")
-        response.raise_for_status()
+        logger.error(f"Response: {json.dumps(response.json(), indent=2)}")
     return response
 
 
@@ -379,7 +379,7 @@ def slurm_source(
             },
             {
                 "name": "slurm_v0_0_38_get_jobs",
-                "table_name": "v0_0_38_job_overview",
+                "table_name": "v0_0_38_jobs_overview",
                 "endpoint": {
                     "data_selector": "jobs",
                     "path": "/slurm/v0.0.38/jobs",
@@ -387,25 +387,25 @@ def slurm_source(
                         # the parameters below can optionally be configured
                         # "update_time": "OPTIONAL_CONFIG",
                     },
-                    "paginator": "auto",
+                    "paginator": "single_page",
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_get_job",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/job/{job_id}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "job_id": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_jobs",
-            #                 "field": "job_id",
-            #             }
-            #         },
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_get_job",
+                "table_name": "v0_0_38_jobs",
+                "endpoint": {
+                    "data_selector": "jobs",
+                    "path": "/slurm/v0.0.38/job/{job_id}",
+                    "paginator": "single_page",
+                    "params": {
+                        "job_id": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_jobs",
+                            "field": "job_id",
+                        }
+                    },
+                },
+            },
             # {
             #     "name": "slurm_v0_0_38_get_nodes",
             #     "table_name": "v0_0_38_error",
