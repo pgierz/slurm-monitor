@@ -10,12 +10,12 @@ authors = [{name = "Paul Gierz", email = "paul.gierz@awi.de"}]
 #
 #         See GH Issue #3
 dependencies = [
-  streamlit = ">=1.44.1,<2",
-  duckdb = ">=1.2.2,<2",
-  paramiko = ">=3.5.1,<4",
-  loguru = ">=0.7.2,<0.8",
-  click = ">=8.1.8,<9",
-  requests = ">=2.32.3,<3",
+  "streamlit = >=1.44.1,<2",
+  "duckdb = >=1.2.2,<2",
+  "paramiko = >=3.5.1,<4",
+  "loguru = >=0.7.2,<0.8",
+  "click = >=8.1.8,<9",
+  "requests = >=2.32.3,<3",
 ]
 
 name = "slurm-monitoring"
