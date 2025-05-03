@@ -435,35 +435,35 @@ def slurm_source(
                     },
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_get_partitions",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/partitions",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurm_v0_0_38_get_partition",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/partition/{partition_name}",
-            #         "params": {
-            #             "partition_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurm_v0_0_38_get_partitions",
-            #                 "field": "partition_name",
-            #             },
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_get_partitions",
+                "table_name": "v0_0_38_partitions_overview",
+                "endpoint": {
+                    "data_selector": "partitions",
+                    "path": "/slurm/v0.0.38/partitions",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurm_v0_0_38_get_partition",
+                "table_name": "v0_0_38_partition",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurm/v0.0.38/partition/{partition_name}",
+                    "params": {
+                        "partition_name": {
+                            "type": "resolve",
+                            "resource": "slurm_v0_0_38_get_partitions",
+                            "field": "name",
+                        },
+                    },
+                    "paginator": "auto",
+                },
+            },
             # {
             #     "name": "slurm_v0_0_38_get_reservations",
             #     "table_name": "v0_0_38_error",
