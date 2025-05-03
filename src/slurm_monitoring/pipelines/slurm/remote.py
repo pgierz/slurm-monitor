@@ -13,7 +13,7 @@ import paramiko
 import requests
 
 from ...logging import logger
-from .dlt_sources import slurm_rest_source
+from .dlt_sources import slurm_rest_source, slurm_restdb_source
 
 
 class SlurmRestAPIError(Exception):
@@ -343,6 +343,11 @@ def load_slurm_data(**config) -> Dict[str, Any]:
     load_info : dict
         Information about the load operation
     """
+    dispatch_endpoints = {
+        "slurm": slurm_rest_source,
+        "slurmdb": slurm_restdb_source,
+    }
+    endpoint_type = config.get("endpoint_type", "slurm")
     base_url = config.get("base_url")
     username = config.get("username")
     token = config.get("token")
@@ -353,7 +358,7 @@ def load_slurm_data(**config) -> Dict[str, Any]:
         dataset_name="slurm_data",
     )
     load_info = pipeline.run(
-        slurm_rest_source(
+        dispatch_endpoints[endpoint_type](
             username=username,
             token=token,
             base_url=base_url,
@@ -404,16 +409,45 @@ def run():
     logger.info(f"{slurm_data_ingestion_backend=}")
     logger.info(f"{slurmdb_data_ingestion_backend=}")
 
-    # Create the OpenAPI spec for the SLURM API
-    openapi_response = ssh_tunnel.run_func(get_slurm_openapi_spec)
-    with open("slurm_openapi.json", "w") as f:
-        f.write(openapi_response.text)
+    needs_openapi = "rest" in (
+        slurm_data_ingestion_backend,
+        slurmdb_data_ingestion_backend,
+    )
+    if needs_openapi:
+        # Create the OpenAPI spec for the SLURM API
+        openapi_response = ssh_tunnel.run_func(get_slurm_openapi_spec)
+        with open("slurm_openapi.json", "w") as f:
+            f.write(openapi_response.text)
 
     # [NOTE] Groovy. We got pretty far by now. I can now ping the SLURM API
     #        through the SSH Tunnel. Now, we hook up the pipeline...
-    pipeline_result = ssh_tunnel.run_func(load_slurm_data)
-    logger.success("Pipeline run complete!")
-    logger.success(f"Load info: {pipeline_result}")
+    if slurm_data_ingestion_backend == "rest":
+        pipeline_result = ssh_tunnel.run_func(
+            load_slurm_data,
+            endpoint_type="slurm",
+        )
+        logger.success("Pipeline run complete!")
+        logger.success(f"Load info: {pipeline_result}")
+    elif slurm_data_ingestion_backend == "cli":
+        raise NotImplementedError("CLI ingestion not implemented yet for slurm!")
+    else:
+        raise NotImplementedError(
+            f"Unknown ingestion backend: {slurm_data_ingestion_backend}"
+        )
+
+    if slurmdb_data_ingestion_backend == "rest":
+        pipeline_result = ssh_tunnel.run_func(
+            load_slurm_data,
+            endpoint_type="slurmdb",
+        )
+        logger.success("Pipeline run complete!")
+        logger.success(f"Load info: {pipeline_result}")
+    elif slurmdb_data_ingestion_backend == "cli":
+        raise NotImplementedError("CLI ingestion not implemented yet for slurmdb!")
+    else:
+        raise NotImplementedError(
+            f"Unknown ingestion backend: {slurmdb_data_ingestion_backend}"
+        )
 
 
 if __name__ == "__main__":

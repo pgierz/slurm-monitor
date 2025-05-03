@@ -71,10 +71,10 @@ def manual_get(
 
 
 @dlt.source(
-    name="slurm_source",
+    name="slurmdb_source",
     max_table_nesting=2,
 )
-def slurm_rest_source(
+def slurm_restdb_source(
     username: str = dlt.secrets.value,
     token: str = dlt.secrets.value,
     base_url: str = dlt.config.value,
@@ -92,265 +92,313 @@ def slurm_rest_source(
             "auth": auth,
         },
         "resources": [
-            # #################################################################
+            #################################################################
             # [NOTE] This one doesn't work
-            # {
-            #     "name": "slurmdb_v0_0_38_diag",
-            #     "table_name": "dbv0_0_38_diag",
-            #     "endpoint": {
-            #         "data_selector": "$",
-            #         "path": "/slurmdb/v0.0.38/diag",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # #################################################################
-            # # This endpoint may return multiple job entries since job_id is not a unique key - only the tuple (cluster, job_id, start_time) is unique. If the requested job_id is a component of a heterogeneous job all components are returned.
-            # {
-            #     "name": "slurmdb_v0_0_38_get_job",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/job/{job_id}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "job_id": {
-            #                 "type": "resolve",
-            #                 "resource": "slurmdb_v0_0_38_get_jobs",
-            #                 "field": "job_id",
-            #             },
-            #         },
-            #     },
-            # },
-            # #################################################################
+            {
+                "name": "slurmdb_v0_0_38_diag",
+                "table_name": "dbv0_0_38_diag",
+                "endpoint": {
+                    "data_selector": "$",
+                    "path": "/slurmdb/v0.0.38/diag",
+                    "paginator": "auto",
+                },
+            },
+            #################################################################
+            # This endpoint may return multiple job entries since job_id is not a unique key - only the tuple (cluster, job_id, start_time) is unique. If the requested job_id is a component of a heterogeneous job all components are returned.
+            {
+                "name": "slurmdb_v0_0_38_get_job",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/job/{job_id}",
+                    "paginator": "auto",
+                    "params": {
+                        "job_id": {
+                            "type": "resolve",
+                            "resource": "slurmdb_v0_0_38_get_jobs",
+                            "field": "job_id",
+                        },
+                    },
+                },
+            },
+            #################################################################
             # [NOTE] This one doesn't work: Protocol authentication error
-            # {
-            #     "name": "slurmdb_v0_0_38_get_config",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/config",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # #################################################################
+            {
+                "name": "slurmdb_v0_0_38_get_config",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/config",
+                    "paginator": "auto",
+                },
+            },
+            #################################################################
             # [NOTE] This one doesn't work, but I don't think we have that
             #        plugin active (needs "accounting_storage"??)
-            # {
-            #     "name": "slurmdb_v0_0_38_get_tres",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/tres",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # #################################################################
-            # {
-            #     "name": "slurmdb_v0_0_38_get_single_qos",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/qos/{qos_name}",
-            #         "params": {
-            #             "qos_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurmdb_v0_0_38_get_qos",
-            #                 "field": "qos_name",
-            #             },
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_qos",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/qos",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "with_deleted": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_associations",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/associations",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "cluster": "OPTIONAL_CONFIG",
-            #             # "account": "OPTIONAL_CONFIG",
-            #             # "user": "OPTIONAL_CONFIG",
-            #             # "partition": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_association",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/association",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "cluster": "OPTIONAL_CONFIG",
-            #             # "account": "OPTIONAL_CONFIG",
-            #             # "user": "OPTIONAL_CONFIG",
-            #             # "partition": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_user",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/user/{user_name}",
-            #         "params": {
-            #             "user_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurmdb_v0_0_38_get_users",
-            #                 "field": "user_name",
-            #             },
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_users",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/users",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "with_deleted": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_wckey",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/wckey/{wckey}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "wckey": {
-            #                 "type": "resolve",
-            #                 "resource": "slurmdb_v0_0_38_get_wckeys",
-            #                 "field": "wckey",
-            #             },
-            #         },
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_wckeys",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/wckeys",
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_account",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/account/{account_name}",
-            #         "params": {
-            #             "account_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurmdb_v0_0_38_get_accounts",
-            #                 "field": "account_name",
-            #             }
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_accounts",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/accounts",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "with_deleted": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_jobs",
-            #     "table_name": "dbv0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurmdb/v0.0.38/jobs",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "submit_time": "OPTIONAL_CONFIG",
-            #             # "start_time": "OPTIONAL_CONFIG",
-            #             # "end_time": "OPTIONAL_CONFIG",
-            #             # "account": "OPTIONAL_CONFIG",
-            #             # "association": "OPTIONAL_CONFIG",
-            #             # "cluster": "OPTIONAL_CONFIG",
-            #             # "constraints": "OPTIONAL_CONFIG",
-            #             # "cpus_max": "OPTIONAL_CONFIG",
-            #             # "cpus_min": "OPTIONAL_CONFIG",
-            #             # "skip_steps": "OPTIONAL_CONFIG",
-            #             # "disable_wait_for_result": "OPTIONAL_CONFIG",
-            #             # "exit_code": "OPTIONAL_CONFIG",
-            #             # "format": "OPTIONAL_CONFIG",
-            #             # "group": "OPTIONAL_CONFIG",
-            #             # "job_name": "OPTIONAL_CONFIG",
-            #             # "nodes_max": "OPTIONAL_CONFIG",
-            #             # "nodes_min": "OPTIONAL_CONFIG",
-            #             # "partition": "OPTIONAL_CONFIG",
-            #             # "qos": "OPTIONAL_CONFIG",
-            #             # "reason": "OPTIONAL_CONFIG",
-            #             # "reservation": "OPTIONAL_CONFIG",
-            #             # "state": "OPTIONAL_CONFIG",
-            #             # "step": "OPTIONAL_CONFIG",
-            #             # "node": "OPTIONAL_CONFIG",
-            #             # "wckey": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_cluster",
-            #     "table_name": "v0",
-            #     "endpoint": {
-            #         "data_selector": "flags",
-            #         "path": "/slurmdb/v0.0.38/cluster/{cluster_name}",
-            #         "paginator": "auto",
-            #         "params": {
-            #             "cluster_name": {
-            #                 "type": "resolve",
-            #                 "resource": "slurmdb_v0_0_38_get_clusters",
-            #                 "field": "cluster_name",
-            #             },
-            #         },
-            #     },
-            # },
-            # {
-            #     "name": "slurmdb_v0_0_38_get_clusters",
-            #     "table_name": "v0",
-            #     "endpoint": {
-            #         "data_selector": "flags",
-            #         "path": "/slurmdb/v0.0.38/clusters",
-            #         "paginator": "auto",
-            #     },
-            # },
+            {
+                "name": "slurmdb_v0_0_38_get_tres",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/tres",
+                    "paginator": "auto",
+                },
+            },
+            #################################################################
+            {
+                "name": "slurmdb_v0_0_38_get_single_qos",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/qos/{qos_name}",
+                    "params": {
+                        "qos_name": {
+                            "type": "resolve",
+                            "resource": "slurmdb_v0_0_38_get_qos",
+                            "field": "qos_name",
+                        },
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_qos",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/qos",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "with_deleted": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_associations",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/associations",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "cluster": "OPTIONAL_CONFIG",
+                        # "account": "OPTIONAL_CONFIG",
+                        # "user": "OPTIONAL_CONFIG",
+                        # "partition": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_association",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/association",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "cluster": "OPTIONAL_CONFIG",
+                        # "account": "OPTIONAL_CONFIG",
+                        # "user": "OPTIONAL_CONFIG",
+                        # "partition": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_user",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/user/{user_name}",
+                    "params": {
+                        "user_name": {
+                            "type": "resolve",
+                            "resource": "slurmdb_v0_0_38_get_users",
+                            "field": "user_name",
+                        },
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_users",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/users",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "with_deleted": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_wckey",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/wckey/{wckey}",
+                    "paginator": "auto",
+                    "params": {
+                        "wckey": {
+                            "type": "resolve",
+                            "resource": "slurmdb_v0_0_38_get_wckeys",
+                            "field": "wckey",
+                        },
+                    },
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_wckeys",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/wckeys",
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_account",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/account/{account_name}",
+                    "params": {
+                        "account_name": {
+                            "type": "resolve",
+                            "resource": "slurmdb_v0_0_38_get_accounts",
+                            "field": "account_name",
+                        }
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_accounts",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/accounts",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "with_deleted": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_jobs",
+                "table_name": "dbv0_0_38_error",
+                "endpoint": {
+                    "data_selector": "errors",
+                    "path": "/slurmdb/v0.0.38/jobs",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "submit_time": "OPTIONAL_CONFIG",
+                        # "start_time": "OPTIONAL_CONFIG",
+                        # "end_time": "OPTIONAL_CONFIG",
+                        # "account": "OPTIONAL_CONFIG",
+                        # "association": "OPTIONAL_CONFIG",
+                        # "cluster": "OPTIONAL_CONFIG",
+                        # "constraints": "OPTIONAL_CONFIG",
+                        # "cpus_max": "OPTIONAL_CONFIG",
+                        # "cpus_min": "OPTIONAL_CONFIG",
+                        # "skip_steps": "OPTIONAL_CONFIG",
+                        # "disable_wait_for_result": "OPTIONAL_CONFIG",
+                        # "exit_code": "OPTIONAL_CONFIG",
+                        # "format": "OPTIONAL_CONFIG",
+                        # "group": "OPTIONAL_CONFIG",
+                        # "job_name": "OPTIONAL_CONFIG",
+                        # "nodes_max": "OPTIONAL_CONFIG",
+                        # "nodes_min": "OPTIONAL_CONFIG",
+                        # "partition": "OPTIONAL_CONFIG",
+                        # "qos": "OPTIONAL_CONFIG",
+                        # "reason": "OPTIONAL_CONFIG",
+                        # "reservation": "OPTIONAL_CONFIG",
+                        # "state": "OPTIONAL_CONFIG",
+                        # "step": "OPTIONAL_CONFIG",
+                        # "node": "OPTIONAL_CONFIG",
+                        # "wckey": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_cluster",
+                "table_name": "v0",
+                "endpoint": {
+                    "data_selector": "flags",
+                    "path": "/slurmdb/v0.0.38/cluster/{cluster_name}",
+                    "paginator": "auto",
+                    "params": {
+                        "cluster_name": {
+                            "type": "resolve",
+                            "resource": "slurmdb_v0_0_38_get_clusters",
+                            "field": "cluster_name",
+                        },
+                    },
+                },
+            },
+            {
+                "name": "slurmdb_v0_0_38_get_clusters",
+                "table_name": "v0",
+                "endpoint": {
+                    "data_selector": "flags",
+                    "path": "/slurmdb/v0.0.38/clusters",
+                    "paginator": "auto",
+                },
+            },
+        ],
+    }
+
+    # [FIXME] This belongs somewhere else...
+    # Interactively call the requests "raw" first, to
+    # see their responses...
+    if os.environ.get("DEBUG_SLURM_DLT"):
+        for resource in source_config["resources"]:
+            manual_get(
+                resource,
+                username,
+                token,
+                base_url,
+            )
+
+    try:
+        resources = rest_api_resources(source_config)
+        # for resource in resources:
+        #     logger.info(f"Resource: {resource.name}")
+        #     for value in resource:
+        #         logger.info(f"Value: {value}")
+        # breakpoint()
+        yield from resources
+    except requests.exceptions.HTTPError as e:
+        logger.error(e)
+        pdb.post_mortem()
+
+
+@dlt.source(
+    name="slurm_source",
+    max_table_nesting=2,
+)
+def slurm_rest_source(
+    username: str = dlt.secrets.value,
+    token: str = dlt.secrets.value,
+    base_url: str = dlt.config.value,
+) -> List[DltResource]:
+
+    auth = SlurmAuthConfig(
+        username=username,
+        token=token,
+    )
+    source_config: RESTAPIConfig = {
+        "client": {
+            "base_url": base_url,
+            "auth": auth,
+        },
+        "resources": [
             {
                 "name": "slurm_v0_0_38_diag",
                 "table_name": "v0_0_38_diag",
