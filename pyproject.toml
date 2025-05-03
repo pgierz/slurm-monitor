@@ -1,9 +1,14 @@
 [project]
-authors = [{name = "Paul Gierz", email = "pgierz@awi.de"}]
+authors = [{name = "Paul Gierz", email = "paul.gierz@awi.de"}]
+# [TODO]: It would be good to see if this can be removed, or if it is "separate"
+#         from what is listed in [tool.pixi.dependencies]
 dependencies = []
 name = "slurm-monitoring"
 requires-python = ">= 3.11"
 version = "0.1.0"
+
+[project.scripts]
+slurm-monitoring = "slurm_monitoring.cli:cli"
 
 [build-system]
 build-backend = "hatchling.build"
@@ -15,14 +20,21 @@ platforms = ["osx-arm64"]
 
 [tool.pixi.pypi-dependencies]
 slurm_monitoring = { path = ".", editable = true }
+dlt = ">=1.10.0,<2"
 
 [tool.pixi.tasks]
-slurm-pipeline = "python slurm_pipeline.py"
+# This just mirrors the slurm-monitoring command line interface added
+# in [project.scripts]
+slurm-monitoring = "python -m slurm_monitoring.cli"
+# The rest are specific tasks in pixi:
+slurm-pipeline = "python -m slurm_monitoring.cli pipeline slurm.remote run" 
+examples-config = "python examples/config_example.py"
+examples-duckdb = "python examples/show_duckdb_example.py"
 
 [tool.pixi.dependencies]
-dlt = ">=1.5.0,<2"
 streamlit = ">=1.44.1,<2"
 duckdb = ">=1.2.2,<2"
 paramiko = ">=3.5.1,<4"
 loguru = ">=0.7.2,<0.8"
-
+click = ">=8.1.8,<9"
+requests = ">=2.32.3,<3"
