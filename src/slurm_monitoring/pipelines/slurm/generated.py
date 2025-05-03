@@ -362,7 +362,7 @@ def slurm_source(
             },
             {
                 "name": "slurm_v0_0_38_slurmctld_get_licenses",
-                "table_name": "v0_0_38_error",
+                "table_name": "v0_0_38_licenses",
                 "endpoint": {
                     "data_selector": "licenses",
                     "path": "/slurm/v0.0.38/licenses",
@@ -469,7 +469,7 @@ def slurm_source(
                 "name": "slurm_v0_0_38_get_reservations",
                 "table_name": "v0_0_38_reservations_overview",
                 "endpoint": {
-                    "data_selector": "errors",
+                    "data_selector": "reservations",
                     "path": "/slurm/v0.0.38/reservations",
                     "params": {
                         # the parameters below can optionally be configured
