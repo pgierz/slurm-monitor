@@ -416,7 +416,7 @@ def slurm_source(
                         # the parameters below can optionally be configured
                         # "update_time": "OPTIONAL_CONFIG",
                     },
-                    "paginator": "auto",
+                    "paginator": "single_page",
                 },
             },
             {
@@ -445,7 +445,7 @@ def slurm_source(
                         # the parameters below can optionally be configured
                         # "update_time": "OPTIONAL_CONFIG",
                     },
-                    "paginator": "auto",
+                    "paginator": "single_page",
                 },
             },
             {
