@@ -74,7 +74,7 @@ def manual_get(
     name="slurm_source",
     max_table_nesting=2,
 )
-def slurm_source(
+def slurm_rest_source(
     username: str = dlt.secrets.value,
     token: str = dlt.secrets.value,
     base_url: str = dlt.config.value,
@@ -93,7 +93,7 @@ def slurm_source(
         },
         "resources": [
             # #################################################################
-            # [NOTE]: This one doesn't work
+            # [NOTE] This one doesn't work
             # {
             #     "name": "slurmdb_v0_0_38_diag",
             #     "table_name": "dbv0_0_38_diag",

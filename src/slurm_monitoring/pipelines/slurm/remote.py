@@ -13,7 +13,27 @@ import paramiko
 import requests
 
 from ...logging import logger
-from .generated import slurm_source
+from .dlt_sources import slurm_rest_source
+
+
+class SlurmRestAPIError(Exception):
+    """Error class for SLURM Rest API"""
+
+
+class SlurmCliError(Exception):
+    """Error class for SLURM CLI"""
+
+
+class SlurmEndpointError(SlurmRestAPIError):
+    """Error when contacting the slurm endpoint"""
+
+    endpoint = "slurm"
+
+
+class SlurmdbEndpointError(SlurmRestAPIError):
+    """Error when contacting the slurmdb endpoint"""
+
+    endpoint = "slurmdb"
 
 
 class SSHTunnel:
@@ -74,7 +94,7 @@ class SSHTunnel:
         # Add username and host
         cmd.append(f"{self.ssh_username}@{self.ssh_host}")
 
-        logger.info(f"Starting SSH tunnel with command: {' '.join(cmd)}")
+        logger.debug(f"Starting SSH tunnel with command: {' '.join(cmd)}")
 
         # Start the SSH tunnel process
         self.process = subprocess.Popen(
@@ -90,7 +110,7 @@ class SSHTunnel:
             raise RuntimeError(f"SSH tunnel failed to start: {stderr.decode('utf-8')}")
 
         self.is_running = True
-        logger.success(
+        logger.debug(
             f"SSH tunnel established: localhost:{self.local_port} -> {self.remote_host}:{self.remote_port}"
         )
 
@@ -208,6 +228,47 @@ class SSHTunnel:
         return rval
 
 
+def ping_slurmdb_api(
+    username: str,
+    token: str,
+    base_url: str,
+    endpoint: str = "ping",
+    **kwargs,
+):
+    """
+    Ping the SLURM DB API to check if it is reachable
+
+    Parameters
+    ----------
+    username : str
+        The username to use for authentication
+    token : str
+        The token to use for authentication
+    base_url : str
+        The base URL to use for the request
+    endpoint : str, optional
+        The endpoint to ping (default: "ping")
+
+    Returns
+    -------
+    requests.Response
+        The response from the request
+    """
+    headers = {
+        "X-SLURM-USER-NAME": username,
+        "X-SLURM-USER-TOKEN": token,
+    }
+    url = f"{base_url}/slurmdb/v0.0.38/{endpoint}"
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        logger.error("Failed to ping SLURM API!")
+        logger.error(f"Response: {response}")
+        raise SlurmdbEndpointError(response)
+    logger.success("Pinged SLURM API successfully!")
+    logger.success(f"Response: {response.json()}")
+    return response
+
+
 def ping_slurm_api(
     username: str,
     token: str,
@@ -240,14 +301,12 @@ def ping_slurm_api(
     }
     url = f"{base_url}/slurm/v0.0.38/{endpoint}"
     response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    # Check the response
-    if response.status_code == 200:
-        logger.success("Pinged SLURM API successfully!")
-        logger.success(f"Response: {response.json()}")
-    else:
+    if response.status_code != 200:
         logger.error("Failed to ping SLURM API!")
         logger.error(f"Response: {response}")
+        raise SlurmEndpointError(response)
+    logger.success("Pinged SLURM API successfully!")
+    logger.success(f"Response: {response.json()}")
     return response
 
 
@@ -291,7 +350,7 @@ def load_slurm_data(**config) -> Dict[str, Any]:
         dataset_name="slurm_data",
     )
     load_info = pipeline.run(
-        slurm_source(
+        slurm_rest_source(
             username=username,
             token=token,
             base_url=base_url,
@@ -313,11 +372,26 @@ def get_ssh_config():
 
 
 def run():
-    logger.info("Starting **REMOTE** SLURM REST API Ingestion Pipeline...")
+    logger.info("Starting **REMOTE** SLURM Ingestion Pipeline...")
     ssh_config = get_ssh_config()
     ssh_tunnel = SSHTunnel(**ssh_config)
-    ssh_tunnel.generate_slurm_token()
-    ssh_tunnel.run_func(ping_slurm_api)
+    # [TODO] It would be good to be able to select a preference here. Now,
+    #        we prefer REST over CLI, hard-coded.
+    try:
+        ssh_tunnel.generate_slurm_token()
+        for ping in (
+            ping_slurm_api,
+            ping_slurmdb_api,
+        ):
+            ssh_tunnel.run_func(ping)
+        logger.info("...using REST API for SLURM data ingestion.")
+        slurm_data_ingestion_backend = "rest"
+    except (SlurmEndpointError, SlurmdbEndpointError) as e:
+        logger.error(f"...failed to use REST API for endpoint: {e.endpoint}")
+        ssh_tunnel.execute_command("sinfo && scontrol ping")
+        logger.info("...using SLURM CLI for SLURM data ingestion.")
+        slurm_data_ingestion_backend = "cli"
+    logger.info(f"...set ingestion backend to: {slurm_data_ingestion_backend}")
 
     # Create the OpenAPI spec for the SLURM API
     openapi_response = ssh_tunnel.run_func(get_slurm_openapi_spec)
