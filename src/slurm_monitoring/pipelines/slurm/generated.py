@@ -377,19 +377,19 @@ def slurm_source(
                     "paginator": "single_page",
                 },
             },
-            # {
-            #     "name": "slurm_v0_0_38_get_jobs",
-            #     "table_name": "v0_0_38_error",
-            #     "endpoint": {
-            #         "data_selector": "errors",
-            #         "path": "/slurm/v0.0.38/jobs",
-            #         "params": {
-            #             # the parameters below can optionally be configured
-            #             # "update_time": "OPTIONAL_CONFIG",
-            #         },
-            #         "paginator": "auto",
-            #     },
-            # },
+            {
+                "name": "slurm_v0_0_38_get_jobs",
+                "table_name": "v0_0_38_job_overview",
+                "endpoint": {
+                    "data_selector": "jobs",
+                    "path": "/slurm/v0.0.38/jobs",
+                    "params": {
+                        # the parameters below can optionally be configured
+                        # "update_time": "OPTIONAL_CONFIG",
+                    },
+                    "paginator": "auto",
+                },
+            },
             # {
             #     "name": "slurm_v0_0_38_get_job",
             #     "table_name": "v0_0_38_error",
