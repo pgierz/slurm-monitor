@@ -15,7 +15,7 @@ st.set_page_config(
 # Connect to the DuckDB database
 @st.cache_resource
 def get_connection():
-    return duckdb.connect(".dlt/duckdb.db")
+    return duckdb.connect("./slurm_pipeline.duckdb")
 
 
 conn = get_connection()
@@ -41,7 +41,7 @@ try:
     SELECT
         MIN(submit_time) as min_time,
         MAX(submit_time) as max_time
-    FROM slurm_data.jobs
+    FROM slurm_data.v0_0_38_jobs
     """
     time_range = conn.execute(time_query).fetchone()
 
@@ -68,9 +68,7 @@ try:
             )
 
             # Get partitions for filtering
-            partitions_query = (
-                "SELECT DISTINCT name FROM slurm_data.partitions ORDER BY name"
-            )
+            partitions_query = "SELECT DISTINCT name FROM slurm_data.v0_0_38_partitions_overview ORDER BY name"
             partitions = [row[0] for row in conn.execute(partitions_query).fetchall()]
 
             selected_partitions = st.sidebar.multiselect(
@@ -91,7 +89,7 @@ try:
                 SELECT
                     state,
                     COUNT(*) as count
-                FROM slurm_data.nodes
+                FROM slurm_data.v0_0_38_nodes__nodes
                 GROUP BY state
                 """
 
@@ -118,7 +116,7 @@ try:
                 SELECT
                     job_state,
                     COUNT(*) as count
-                FROM slurm_data.jobs
+                FROM slurm_data.v0_0_38_jobs
                 WHERE submit_time BETWEEN {start_timestamp} AND {end_timestamp}
                 {f"AND partition IN ({', '.join(['?' for _ in selected_partitions])})" if selected_partitions else ""}
                 GROUP BY job_state
@@ -149,9 +147,9 @@ try:
             SELECT
                 partition,
                 COUNT(*) as job_count,
-                SUM(num_cpus) as total_cpus,
-                AVG(num_cpus) as avg_cpus_per_job
-            FROM slurm_data.jobs
+                SUM(cpus) as total_cpus,
+                AVG(cpus) as avg_cpus_per_job
+            FROM slurm_data.v0_0_38_jobs
             WHERE submit_time BETWEEN {start_timestamp} AND {end_timestamp}
             {f"AND partition IN ({', '.join(['?' for _ in selected_partitions])})" if selected_partitions else ""}
             GROUP BY partition
@@ -192,7 +190,7 @@ try:
                 job_id,
                 partition,
                 (end_time - start_time) / 60 as duration_minutes
-            FROM slurm_data.jobs
+                FROM slurm_data.v0_0_38_jobs
             WHERE
                 submit_time BETWEEN {start_timestamp} AND {end_timestamp}
                 AND end_time > 0
@@ -225,13 +223,15 @@ try:
             # Raw data section (expandable)
             with st.expander("View Raw Data"):
                 st.subheader("Nodes Data")
-                nodes_raw_query = "SELECT * FROM slurm_data.nodes LIMIT 100"
+                nodes_raw_query = (
+                    "SELECT * FROM slurm_data.v0_0_38_nodes__nodes LIMIT 100"
+                )
                 nodes_raw_df = conn.execute(nodes_raw_query).df()
                 st.dataframe(nodes_raw_df)
 
                 st.subheader("Jobs Data")
                 jobs_raw_query = f"""
-                SELECT * FROM slurm_data.jobs
+                SELECT * FROM slurm_data.v0_0_38_jobs
                 WHERE submit_time BETWEEN {start_timestamp} AND {end_timestamp}
                 {f"AND partition IN ({', '.join(['?' for _ in selected_partitions])})" if selected_partitions else ""}
                 LIMIT 100
