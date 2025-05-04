@@ -22,7 +22,7 @@ dependencies = [
 
 name = "slurm-monitoring"
 requires-python = ">= 3.11"
-version = "0.3.0"
+version = "0.4.0"
 
 [project.scripts]
 slurm-monitor = "slurm_monitoring.cli:cli"
