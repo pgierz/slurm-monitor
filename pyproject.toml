@@ -16,6 +16,8 @@ dependencies = [
   "loguru>=0.7.2,<0.8",
   "click>=8.1.8,<9",
   "requests>=2.32.3,<3",
+  "lumen>=0.8.0,<0.9",
+  "plotly>=6.0.1,<7",
 ]
 
 name = "slurm-monitoring"
@@ -54,6 +56,8 @@ paramiko = ">=3.5.1,<4"
 loguru = ">=0.7.2,<0.8"
 click = ">=8.1.8,<9"
 requests = ">=2.32.3,<3"
+lumen = ">=0.8.0,<0.9"
+plotly = ">=6.0.1,<7"
 
 [tool.pixi.environments.dev]
 features = ["dev"]
@@ -62,3 +66,4 @@ features = ["dev"]
 pre-commit = "*"
 ruff = "*"
 bumpversion = ">=0.5.3,<0.6"
+commitizen = ">=4.6.0,<5"
