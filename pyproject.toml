@@ -20,12 +20,12 @@ dependencies = [
   "plotly>=6.0.1,<7",
 ]
 
-name = "slurm-monitoring"
+name = "slurm-monitor"
 requires-python = ">= 3.11"
 version = "0.4.0"
 
 [project.scripts]
-slurm-monitor = "slurm_monitoring.cli:cli"
+slurm-monitor = "slurm_monitor.cli:cli"
 
 [build-system]
 build-backend = "hatchling.build"
@@ -42,12 +42,12 @@ dlt = ">=1.10.0,<2"
 [tool.pixi.tasks]
 # This just mirrors the slurm-monitoring command line interface added
 # in [project.scripts]
-slurm-monitor = "python -m slurm_monitoring.cli"
+slurm-monitor = "python -m slurm_monitor.cli"
 # The rest are specific tasks in pixi:
 examples-config = "python examples/config_example.py"
 examples-duckdb = "python examples/show_duckdb_example.py"
 slurm-dbshow = "dlt pipeline slurm_pipeline show"
-slurm-pipeline = "python -m slurm_monitoring.cli pipeline slurm.remote run"
+slurm-pipeline = "python -m slurm_monitor.cli pipeline slurm.remote run"
 
 [tool.pixi.dependencies]
 streamlit = ">=1.44.1,<2"
