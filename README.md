@@ -5,9 +5,7 @@
 > Alfred Wegener Institute for Polar and Marine Research
 > Bremerhaven, Germany
 
-.. image:: https://readthedocs.org/projects/slurm-monitor/badge/?version=latest
-    :target: https://slurm-monitor.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+[![Documentation Status](https://readthedocs.org/projects/slurm-monitor/badge/?version=latest)](https://slurm-monitor.readthedocs.io/en/latest/?badge=latest)
 
 ## Install
 Not sure how the install for this works out yet. Probably via `pip`?
