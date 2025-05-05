@@ -1,0 +1,94 @@
+name: Automatic Versioning and Changelog
+on:
+  push:
+    branches:
+      - master
+jobs:
+  version-and-changelog:
+    runs-on: ubuntu-latest
+    # Skip this workflow if the commit message contains [skip ci] or [skip changelog]
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip changelog]')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install commitizen bumpversion
+
+      - name: Check if PR merge
+        id: check_pr_merge
+        run: |
+          # Check if the commit message contains a PR reference (#XX)
+          if [[ "${{ github.event.head_commit.message }}" =~ \(#[0-9]+\) ]]; then
+            echo "is_pr_merge=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_pr_merge=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine version bump type
+        id: bump_type
+        if: steps.check_pr_merge.outputs.is_pr_merge == 'true'
+        run: |
+          # Extract conventional commit type from commit message
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+
+          # Default to patch if we can't determine
+          BUMP_TYPE="patch"
+
+          # Check for feat: or feat(scope): to bump minor
+          if [[ "$COMMIT_MSG" =~ ^feat(\(.*\))?:.* ]]; then
+            BUMP_TYPE="minor"
+          # Check for BREAKING CHANGE: or feat!: to bump major
+          elif [[ "$COMMIT_MSG" =~ BREAKING\ CHANGE: || "$COMMIT_MSG" =~ ^feat!(\(.*\))?:.* ]]; then
+            BUMP_TYPE="major"
+          fi
+
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump_version
+        if: steps.check_pr_merge.outputs.is_pr_merge == 'true'
+        run: |
+          # Bump version using bumpversion
+          bumpversion ${{ steps.bump_type.outputs.bump_type }} --allow-dirty
+
+          # Get the new version
+          NEW_VERSION=$(grep 'current_version' .bumpversion.cfg | sed 's/current_version = //')
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate Changelog
+        id: changelog
+        if: steps.check_pr_merge.outputs.is_pr_merge == 'true'
+        run: |
+          # Generate changelog
+          commitizen changelog --changelog-path ./CHANGELOG.md
+
+          # Stage changes
+          git add ./CHANGELOG.md
+          git add .bumpversion.cfg
+          git add pyproject.toml
+
+          # Configure git
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Commit changes
+          git commit -m "chore: update changelog and bump version to ${{ steps.bump_version.outputs.new_version }} [skip changelog]"
+
+      - name: Push changes
+        if: steps.check_pr_merge.outputs.is_pr_merge == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
+          tags: true
