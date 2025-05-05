@@ -49,7 +49,7 @@ examples-duckdb = "python examples/show_duckdb_example.py"
 slurm-dbshow = "dlt pipeline slurm_pipeline show"
 slurm-pipeline = "python -m slurm_monitor.cli pipeline slurm.remote run"
 docs = "sphinx-build -b html docs docs/_build/html"
-rtd = "docs/rtd_build.sh"
+rtd = ".readthedocs/build.sh"
 
 [tool.pixi.dependencies]
 streamlit = ">=1.44.1,<2"
