@@ -13,6 +13,7 @@ build:
       - echo "$HOME"
       - echo "$PATH" | tr ":" "\n"
       - export PATH="$HOME/.pixi/bin:$PATH"
+      - echo "$PATH" | tr ":" "\n"
       - pixi install --environment doc
     build:
       html:
