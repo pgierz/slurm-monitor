@@ -10,14 +10,9 @@ build:
     create_environment:
       - curl -Ls https://pixi.sh/install.sh | bash
     install:
-      - echo "$HOME"
-      - echo "$PATH" | tr ":" "\n"
-      - export PATH="$HOME/.pixi/bin:$PATH"
-      - echo "$PATH" | tr ":" "\n"
-      - pixi install --environment doc
+      - $HOME/.pixi/bin/pixi install --environment doc
     build:
       html:
-        - export PATH="$HOME/.pixi/bin:$PATH"
-        - pixi run --environment doc docs
+        - $HOME/.pixi/bin/pixi run --environment doc docs
 sphinx:
   configuration: docs/conf.py
