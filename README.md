@@ -5,6 +5,8 @@
 > Alfred Wegener Institute for Polar and Marine Research
 > Bremerhaven, Germany
 
+[![Documentation Status](https://readthedocs.org/projects/slurm-monitor/badge/?version=latest)](https://slurm-monitor.readthedocs.io/en/latest/?badge=latest)
+
 ## Install
 Not sure how the install for this works out yet. Probably via `pip`?
 ```
@@ -24,7 +26,7 @@ $ pixi run slurm-monitor
 
 Examine the database:
 ```console
-$ pixi run slurm-dbshow 
+$ pixi run slurm-dbshow
 ```
 
 ## Learning from PyConDE 2025
