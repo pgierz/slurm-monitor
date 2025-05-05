@@ -6511,7 +6511,7 @@ packages:
 - pypi: .
   name: slurm-monitor
   version: 0.4.0
-  sha256: c5dbd9470f03c19871a0752820d2d51f4ea03aa37eb1b946145e5af58ec65c3f
+  sha256: 75227bc2e8dd873d87a888b5208d99d830d00bb9f646e52a23f2d0cb476a8521
   requires_dist:
   - streamlit>=1.44.1,<2
   - duckdb>=1.2.2,<2
