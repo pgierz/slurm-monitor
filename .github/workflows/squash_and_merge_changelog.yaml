@@ -70,7 +70,7 @@ jobs:
         if: steps.check_pr_merge.outputs.is_pr_merge == 'true'
         run: |
           # Generate changelog
-          cz changelog --changelog-path ./CHANGELOG.md
+          cz changelog
 
           # Stage changes
           git add ./CHANGELOG.md
