@@ -13,6 +13,6 @@ build:
       - $HOME/.pixi/bin/pixi install --environment doc
     build:
       html:
-        - $HOME/.pixi/bin/pixi run --environment doc docs
+        - $HOME/.pixi/bin/pixi run --environment doc rtd
 sphinx:
   configuration: docs/conf.py
