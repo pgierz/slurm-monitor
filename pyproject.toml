@@ -33,10 +33,10 @@ requires = ["hatchling"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 
 [tool.pixi.pypi-dependencies]
-slurm_monitoring = { path = ".", editable = true }
+slurm_monitor = { path = ".", editable = true }
 dlt = ">=1.10.0,<2"
 
 [tool.pixi.tasks]
