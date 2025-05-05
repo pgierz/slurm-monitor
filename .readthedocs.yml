@@ -7,8 +7,9 @@ build:
   tools:
     python: "3.11"
   jobs:
-    pre_build:
+    create_environment:
       - curl -Ls https://pixi.sh/install.sh | bash
+    install:
       - export PATH="$HOME/.pixi/bin:$PATH"
       - pixi install --environment doc
     build:
