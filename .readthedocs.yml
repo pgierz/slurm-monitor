@@ -10,6 +10,8 @@ build:
     create_environment:
       - curl -Ls https://pixi.sh/install.sh | bash
     install:
+      - echo "$HOME"
+      - echo "$PATH" | tr ":" "\n"
       - export PATH="$HOME/.pixi/bin:$PATH"
       - pixi install --environment doc
     build:
