@@ -6,15 +6,15 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/slurm-monitor
     concurrency:
       group: ${{ github.workflow }}-release-${{ github.ref_name }}
       cancel-in-progress: false
     permissions:
       id-token: write
       contents: write
-    environment:
-      name: pypi
-      url: https://pypi.org/p/slurm-monitor
     steps:
       # Note: We checkout the repository at the branch that triggered the workflow
       # with the entire history to ensure to match PSR's release branch detection
