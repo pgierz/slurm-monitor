@@ -12,6 +12,9 @@ jobs:
     permissions:
       id-token: write
       contents: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/slurm-monitor
     steps:
       # Note: We checkout the repository at the branch that triggered the workflow
       # with the entire history to ensure to match PSR's release branch detection
@@ -80,5 +83,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.release.outputs.tag }}
       - name: Publish | Upload package to PyPI
-        uses: pypa/gh-action-pypi-publish@SHA1_HASH # vX.X.X
+        uses: pypa/gh-action-pypi-publish@release/v1 # vX.X.X
         if: steps.release.outputs.released == 'true'
