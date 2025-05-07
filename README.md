@@ -57,3 +57,16 @@ $ pixi run dlt init rest_api duckdb
 ```
 
 Next, we use the example to get stuff from GitHub.
+
+### Using the `Semantic Release` workflow:
+
+I wanted to try out [`semantic-release`](https://python-semantic-release.readthedocs.io/en/latest/index.html).
+
+This tool basically analyzes your commit messages and automatically creates a version number and releases to GitHub, PyPI, etc.
+
+You can run it by hand:
+```console
+$ pixi run --environment dev semrel --help
+```
+
+However, for this project, we use the [example GitHub Actions workflow](https://python-semantic-release.readthedocs.io/en/latest/automatic-releases/github-actions.html#common-workflow-example)
