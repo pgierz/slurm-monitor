@@ -39,7 +39,7 @@ jobs:
         run: |
           pwd
           ls -ratl
-          .github/workflows/continuing-delivery/verify-upstream.sh
+          .github/workflows/continuous-delivery/verify-upstream.sh
       - name: Action | Semantic Version Release
         id: release
         # Adjust tag with desired version if applicable.
