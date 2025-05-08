@@ -40,6 +40,12 @@ jobs:
           pwd
           ls -ratl
           .github/workflows/continuous-delivery/verify-upstream.sh
+      - name: Setup | Set up Python
+        uses: actions/setup-python@v4
+      - name: Setup | Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatchling
       - name: Action | Semantic Version Release
         id: release
         # Adjust tag with desired version if applicable.
