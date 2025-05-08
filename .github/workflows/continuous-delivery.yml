@@ -47,7 +47,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install hatchling
       - name: Check | Ensure buildtools exist
-        run: which hatch
+        run: which hatchling
       - name: Action | Semantic Version Release
         id: release
         # Adjust tag with desired version if applicable.
