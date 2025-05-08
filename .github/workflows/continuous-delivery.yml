@@ -36,7 +36,10 @@ jobs:
         # because we are committing a version change (--commit). You may omit this step
         # if you have 'commit: false' in your configuration.
         shell: bash
-        run: .github/workflows/continuing-delivery/verify-upstream.sh
+        run: |
+          pwd
+          ls -ratl
+          .github/workflows/continuing-delivery/verify-upstream.sh
       - name: Action | Semantic Version Release
         id: release
         # Adjust tag with desired version if applicable.
