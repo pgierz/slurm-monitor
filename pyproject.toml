@@ -19,7 +19,7 @@ dependencies = [
   "lumen>=0.8.0,<0.9",
   "plotly>=6.0.1,<7",
   "build>=1.2.2.post1,<2",
-  "dlt>=1.10.0,<2",
+  "dlt>=1.10.0,<2", "hatchling>=1.27.0,<2",
 ]
 
 name = "slurm-monitor"
