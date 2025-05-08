@@ -18,6 +18,8 @@ dependencies = [
   "requests>=2.32.3,<3",
   "lumen>=0.8.0,<0.9",
   "plotly>=6.0.1,<7",
+  "build>=1.2.2.post1,<2",
+  "dlt>=1.10.0,<2",
 ]
 
 name = "slurm-monitor"
@@ -34,10 +36,6 @@ requires = ["hatchling"]
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["osx-arm64", "linux-64"]
-
-[tool.pixi.pypi-dependencies]
-slurm_monitor = { path = ".", editable = true }
-dlt = ">=1.10.0,<2"
 
 [tool.pixi.tasks]
 # This just mirrors the slurm-monitoring command line interface added
@@ -90,6 +88,7 @@ allow_zero_version = true
 repo_dir = "."
 no_git_verify = false
 tag_format = "v{version}"
+build_command = "python -m build"
 
 [tool.semantic_release.branches.main]
 match = "(main|master)"

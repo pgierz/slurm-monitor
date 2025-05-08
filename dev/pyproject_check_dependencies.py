@@ -25,10 +25,15 @@ def check_dependencies_sync_from_pixi_and_project(pyproject_path: Path):
         f"{k}{v}" for k, v in pixi_deps.items() if k and v
     )  # remove duplicates, sort for stability
 
-    if project_dependencies != pixi_dependencies:
-        raise ValueError(
-            f"Expected [project.dependencies] to match [tool.pixi.dependencies] in: {pyproject_path}"
-        )
+    # Check if all pixi dependences are in project dependencies
+    # project_dependencies can have more, but must at least have
+    # all pixi dependencies
+    for pixi_dep in pixi_dependencies:
+        if pixi_dep not in project_dependencies:
+            raise ValueError(
+                f"Expected [tool.pixi.dependencies] to be a subset of [project.dependencies] in: {pyproject_path}"
+            )
+
     print("[project.dependencies] matches [tool.pixi.dependencies].")
 
 
