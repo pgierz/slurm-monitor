@@ -33,22 +33,36 @@ mkdir -p "$(dirname "${OUT}")"
 cd "${REPO_ROOT}"
 
 if apptainer --version >/dev/null 2>&1; then
-  RUNTIME=apptainer
+  RUNTIME=(apptainer)
 elif singularity --version >/dev/null 2>&1; then
-  RUNTIME=singularity
+  RUNTIME=(singularity)
 else
   echo "neither apptainer nor singularity found in PATH" >&2
   exit 1
 fi
 
-if [[ "${EUID}" -ne 0 ]]; then
-  FAKEROOT_FLAG="--fakeroot"
-else
-  FAKEROOT_FLAG=""
+# Login-node RAM is not enough for squashfs creation; build on a compute node.
+# Disable by exporting SLURM_MONITOR_BUILD_ON_COMPUTE=0.
+if [[ "${SLURM_MONITOR_BUILD_ON_COMPUTE:-1}" != "0" ]] && command -v srun >/dev/null 2>&1; then
+  SRUN_ACCOUNT="${SLURM_MONITOR_BUILD_ACCOUNT:-computing.computing}"
+  SRUN_MEM="${SLURM_MONITOR_BUILD_MEM:-32G}"
+  SRUN_TIME="${SLURM_MONITOR_BUILD_TIME:-00:30:00}"
+  RUNTIME=(srun -A "${SRUN_ACCOUNT}" --mem="${SRUN_MEM}" --time="${SRUN_TIME}" "${RUNTIME[@]}")
 fi
 
-echo "Building ${OUT} with ${RUNTIME} (${FAKEROOT_FLAG:-as root})"
-"${RUNTIME}" build ${FAKEROOT_FLAG} "${OUT}" "${DEF}"
+if [[ "${EUID}" -ne 0 ]]; then
+  FAKEROOT_FLAG=(--fakeroot)
+else
+  FAKEROOT_FLAG=()
+fi
+
+echo "Building ${OUT} with: ${RUNTIME[*]}"
+"${RUNTIME[@]}" build "${FAKEROOT_FLAG[@]}" "${OUT}" "${DEF}"
 
 echo "Built: ${OUT}"
-"${RUNTIME}" inspect "${OUT}" || true
+# inspect cannot run under srun wrapper if shell propagation is off; run plain.
+if command -v apptainer >/dev/null 2>&1; then
+  apptainer inspect "${OUT}" || true
+elif command -v singularity >/dev/null 2>&1; then
+  singularity inspect "${OUT}" || true
+fi
