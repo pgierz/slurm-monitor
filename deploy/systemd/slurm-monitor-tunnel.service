@@ -1,0 +1,39 @@
+[Unit]
+Description=Reverse SSH tunnel: expose login-node exporter to the monitoring VM
+Documentation=https://slurm-monitor.readthedocs.io
+After=network-online.target slurm-monitor-exporter.service
+Wants=network-online.target
+Requires=slurm-monitor-exporter.service
+
+# OPTIONAL FALLBACK: only enable this unit if the monitoring VM cannot reach
+# the login node directly (no inbound firewall opening). Otherwise prefer
+# regular Prometheus pull.
+
+[Service]
+Type=simple
+User=slurm-monitor
+Group=slurm-monitor
+EnvironmentFile=/etc/slurm-monitor/tunnel.env
+
+# Reverse-forward localhost:${REMOTE_PORT} on the monitoring VM to our
+# exporter listening on 127.0.0.1:${LOCAL_PORT}. Prometheus on the VM then
+# scrapes localhost:${REMOTE_PORT}.
+ExecStart=/usr/bin/autossh -M 0 -N \
+    -o ServerAliveInterval=30 \
+    -o ServerAliveCountMax=3 \
+    -o ExitOnForwardFailure=yes \
+    -o StrictHostKeyChecking=accept-new \
+    -i ${SSH_KEY} \
+    -R ${REMOTE_BIND}:${REMOTE_PORT}:127.0.0.1:${LOCAL_PORT} \
+    ${SSH_USER}@${MONITORING_HOST}
+
+Restart=always
+RestartSec=15s
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

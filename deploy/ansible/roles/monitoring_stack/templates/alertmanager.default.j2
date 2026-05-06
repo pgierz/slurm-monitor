@@ -1,0 +1,2 @@
+{{ ansible_managed | comment }}
+ARGS="--config.file=/etc/alertmanager/alertmanager.yml --storage.path={{ monitoring_alertmanager_storage }} --web.listen-address={{ monitoring_alertmanager_listen }}"

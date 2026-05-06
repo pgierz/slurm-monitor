@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodic Slurm JWT refresh for slurm-monitor
+
+[Timer]
+# Token lifespan is 15 min; refresh well before expiry.
+OnBootSec=15s
+OnUnitActiveSec=10min
+AccuracySec=30s
+Unit=slurm-monitor-jwt.service
+
+[Install]
+WantedBy=timers.target

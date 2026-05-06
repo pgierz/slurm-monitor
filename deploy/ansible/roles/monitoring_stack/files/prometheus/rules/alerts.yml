@@ -1,0 +1,128 @@
+groups:
+  - name: slurm-monitor.exporter
+    rules:
+      - alert: SlurmExporterDown
+        expr: up{job="slurm-monitor"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: hpc
+        annotations:
+          summary: "Slurm exporter down ({{ $labels.instance }})"
+          description: |
+            The slurm-monitor exporter at {{ $labels.instance }} has been
+            unreachable for more than 5 minutes. Slurm dashboards and alerts
+            are blind until it recovers.
+          runbook: "https://slurm-monitor.readthedocs.io/operations/troubleshooting/"
+
+      - alert: SlurmCollectorStale
+        expr: |
+          (time() - slurm_monitor_collector_last_success_timestamp_seconds) > 300
+        for: 5m
+        labels:
+          severity: warning
+          team: hpc
+        annotations:
+          summary: "Collector {{ $labels.collector }} stale on {{ $labels.cluster }}"
+          description: |
+            The {{ $labels.collector }} collector hasn't completed
+            successfully in {{ $value | humanizeDuration }}. Check exporter
+            logs and slurmrestd availability.
+
+      - alert: SlurmCollectorErrorBurst
+        expr: |
+          increase(slurm_monitor_collector_errors_total[10m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: hpc
+        annotations:
+          summary: "Collector errors on {{ $labels.collector }} ({{ $labels.reason }})"
+          description: |
+            More than 10 errors in 10 minutes for {{ $labels.collector }}
+            (reason: {{ $labels.reason }}). slurmrestd may be flapping.
+
+  - name: slurm-monitor.cluster
+    rules:
+      - alert: SlurmNodeDown
+        expr: slurm:nodes_down:count > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: hpc
+        annotations:
+          summary: "{{ $value }} node(s) DOWN on {{ $labels.cluster }}"
+          description: |
+            {{ $value }} node(s) on {{ $labels.cluster }} have been in DOWN
+            or NOT_RESPONDING state for more than 5 minutes.
+
+      - alert: SlurmNodesHighDrain
+        expr: slurm:nodes_drained:count > 5
+        for: 30m
+        labels:
+          severity: warning
+          team: hpc
+        annotations:
+          summary: "More than 5 drained nodes on {{ $labels.cluster }}"
+          description: |
+            {{ $value }} nodes are in DRAIN/DRAINED/DRAINING state for over
+            30 minutes. Drains accumulate quietly; investigate before they
+            erode capacity.
+
+      - alert: SlurmPartitionFullPending
+        expr: |
+          slurm:partition_cpu_utilization:ratio > 0.95
+          and
+          slurm:jobs_pending:sum > 50
+        for: 30m
+        labels:
+          severity: info
+          team: hpc
+        annotations:
+          summary: "Partition {{ $labels.partition }} saturated with backlog"
+          description: |
+            CPU utilization on {{ $labels.partition }} is above 95% with
+            >50 pending jobs for 30+ minutes. Expected during peak load;
+            informational only.
+
+      - alert: SlurmHighPendingByResources
+        expr: |
+          slurm:pending_by_reason:sum{reason="Resources"} > 200
+        for: 1h
+        labels:
+          severity: warning
+          team: hpc
+        annotations:
+          summary: "{{ $value }} jobs pending on Resources for 1h on {{ $labels.cluster }}"
+          description: |
+            Sustained resource-pressure backlog. Consider whether reservations,
+            QoS limits, or a flapping partition are responsible.
+
+      - alert: SlurmSchedulerSlowCycle
+        expr: slurm_scheduler_cycle_last_microseconds > 5000000
+        for: 15m
+        labels:
+          severity: warning
+          team: hpc
+        annotations:
+          summary: "Scheduler main cycle > 5s on {{ $labels.cluster }}"
+          description: |
+            slurmctld main scheduling cycle has been longer than 5 seconds
+            for 15+ minutes ({{ $value | humanize }}μs). Investigate before
+            it degrades user-visible scheduling latency.
+
+      - alert: SlurmGPUSaturated
+        expr: |
+          slurm:partition_gpu_utilization:ratio > 0.98
+          and
+          sum by (cluster, partition) (slurm_jobs_pending_by_reason{reason=~".*Gres.*|.*GPU.*"}) > 0
+        for: 1h
+        labels:
+          severity: info
+          team: hpc
+        annotations:
+          summary: "GPU saturation on {{ $labels.partition }} ({{ $labels.gpu_type }})"
+          description: |
+            All {{ $labels.gpu_type }} GPUs in partition {{ $labels.partition }}
+            are allocated and there are GPU-blocked pending jobs. Review for
+            a possible capacity issue.

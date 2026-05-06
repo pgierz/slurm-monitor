@@ -1,0 +1,43 @@
+---
+- name: APT cache update
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install Prometheus + Alertmanager from distro
+  ansible.builtin.apt:
+    name:
+      - prometheus
+      - prometheus-alertmanager
+      - apt-transport-https
+      - software-properties-common
+      - curl
+      - gnupg
+    state: present
+
+- name: Ensure /etc/apt/keyrings exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install Grafana APT signing key
+  ansible.builtin.get_url:
+    url: https://apt.grafana.com/gpg.key
+    dest: /etc/apt/keyrings/grafana.asc
+    mode: "0644"
+    force: false
+
+- name: Add Grafana APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com {{ monitoring_grafana_channel }} main"
+    filename: grafana
+    state: present
+    update_cache: true
+
+- name: Install Grafana
+  ansible.builtin.apt:
+    name: grafana
+    state: present

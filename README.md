@@ -1,72 +1,81 @@
-# A SLURM Monitoring Dashboard
-> Build with things we learned at PyConDE 2025
->
-> The HPC Team
-> Alfred Wegener Institute for Polar and Marine Research
-> Bremerhaven, Germany
+# slurm-monitor
 
 [![Documentation Status](https://readthedocs.org/projects/slurm-monitor/badge/?version=latest)](https://slurm-monitor.readthedocs.io/en/latest/?badge=latest)
 
-## Install
-Not sure how the install for this works out yet. Probably via `pip`?
-```
-$ pip install git+https://github.com/pgierz/slurm-monitor.git
-```
+A Prometheus exporter for Slurm + a turnkey Grafana stack, built for AWI's
+Albedo cluster (240 nodes, A100 / A40 GPUs).
 
-## Usage
-If you have a "real" install, you should be able to do:
-```console
-$ slurm-monitor
-```
+## What you get
 
-If you have a source-install and are using `pixi`:
-```console
-$ pixi run slurm-monitor
-```
+| Piece | Where |
+|---|---|
+| Async Python exporter that talks to **slurmrestd** over JWT | `src/slurm_monitor/` |
+| **Apptainer** image + **systemd** units for the login node | `deploy/apptainer/`, `deploy/systemd/` |
+| **Ansible** role for the monitoring VM (Prom + Alertmanager + Grafana) | `deploy/ansible/` |
+| Recording rules, alert rules, dashboards | `deploy/ansible/roles/monitoring_stack/files/` |
+| Architecture, install, ops, troubleshooting docs | `docs/` |
 
-Examine the database:
-```console
-$ pixi run slurm-dbshow
-```
+## Architecture in one paragraph
 
-## Learning from PyConDE 2025
+A small Python service runs in an Apptainer container on an Albedo login node.
+A systemd timer refreshes a Slurm JWT into a tmpfs file every 10 minutes; the
+exporter reads it, polls **slurmrestd** on five independent intervals
+(20–120 s) for nodes / jobs / partitions / diagnostics / reservations, and
+writes the result into a Prometheus registry. A separate Ubuntu **monitoring
+VM** runs Prometheus, Alertmanager, and Grafana — provisioned by the Ansible
+role in `deploy/ansible/` — and pulls `/metrics` from the login node every
+30 s. Prometheus scrapes never reach Slurm, so the dashboards stay up even
+when slurmrestd flaps.
 
-### Using [`pixi`](https://pixi.sh/) as a build tool.
+## Quickstart
 
-This has all been done. Below are the steps followed:
+### Login node (exporter)
 
-1. Set up a new project:
-```console
-$ pixi init --format pyproject
-```
+```bash
+deploy/apptainer/build.sh                    # builds dist/slurm-monitor-exporter.sif
+sudo install -d /opt/slurm-monitor
+sudo install -m0644 dist/slurm-monitor-exporter.sif /opt/slurm-monitor/
 
-2. Add a package (e.g. [`dlt`](https://dlthub.com/docs/intro))
-```console
-$ pixi add dlt        # For data ingestion
-$ pixi add duckdb     # For data storage
-$ pixi add streamlit  # For plotting/dashboarding
-```
+sudo install -d /etc/slurm-monitor
+sudo install -m0640 deploy/systemd/exporter.env.example /etc/slurm-monitor/exporter.env
+sudo $EDITOR /etc/slurm-monitor/exporter.env
 
-### Using [`dlt`](https://dlthub.com) to grab SLURM REST API Data:
+sudo install -m0644 deploy/systemd/slurm-monitor-jwt.service /etc/systemd/system/
+sudo install -m0644 deploy/systemd/slurm-monitor-jwt.timer   /etc/systemd/system/
+sudo install -m0644 deploy/systemd/slurm-monitor-exporter.service /etc/systemd/system/
 
-Next, we want a way to be able to download data into a database from
-a REST API. We can do that with [`dlt`](https://dlthub.com/docs/intro).
-
-```console
-$ pixi run dlt init rest_api duckdb
-```
-
-Next, we use the example to get stuff from GitHub.
-
-### Using the `Semantic Release` workflow:
-
-I wanted to try out [`semantic-release`](https://python-semantic-release.readthedocs.io/en/latest/index.html).
-
-This tool basically analyzes your commit messages and automatically creates a version number and releases to GitHub, PyPI, etc.
-
-You can run it by hand:
-```console
-$ pixi run --environment dev semrel --help
+sudo systemctl daemon-reload
+sudo systemctl enable --now slurm-monitor-jwt.timer
+sudo systemctl enable --now slurm-monitor-exporter.service
+curl -s http://localhost:9817/healthz
 ```
 
-However, for this project, we use the [example GitHub Actions workflow](https://python-semantic-release.readthedocs.io/en/latest/automatic-releases/github-actions.html#common-workflow-example)
+### Monitoring VM
+
+```bash
+cd deploy/ansible
+cp inventory.example.yml inventory.yml
+$EDITOR inventory.yml          # set FQDN + login-node targets + Grafana password
+ansible-playbook -i inventory.yml site.yml --check --diff
+ansible-playbook -i inventory.yml site.yml
+```
+
+Then visit `http://<vm>:3000` (admin / your password).
+
+## Documentation
+
+* [Architecture](docs/architecture/overview.md)
+* [Installation guide](docs/operations/install.md)
+* [Operations guide](docs/operations/ops.md)
+* [Troubleshooting](docs/operations/troubleshooting.md)
+* [Upgrade strategy](docs/operations/upgrade.md)
+* [Metrics reference](docs/architecture/metrics.md)
+
+## Development
+
+```bash
+pixi install --environment dev
+pixi run --environment dev test
+pixi run exporter            # localhost:9817 — pointed at $SLURM_MONITOR_SLURM_BASE_URL
+pixi run slurm-monitor check # one-shot probe: JWT + API version + ping
+```

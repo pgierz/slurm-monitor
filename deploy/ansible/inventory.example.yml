@@ -1,0 +1,38 @@
+---
+# Copy this file to inventory.yml and edit for your environment.
+all:
+  children:
+    monitoring:
+      hosts:
+        # Replace with the FQDN/IP of the Albedo monitoring VM.
+        albedo-monitor.example.awi.de:
+      vars:
+        ansible_user: ubuntu
+        ansible_become: true
+
+        # ----- monitoring_stack role overrides -----
+        # Login nodes that run the slurm-monitor exporter.
+        monitoring_slurm_targets:
+          - host: albedo1.example.awi.de
+            port: 9817
+            labels:
+              role: login
+              via: pull
+          # Add more login nodes here as you scale out.
+          # - host: albedo2.example.awi.de
+          #   port: 9817
+
+        # Storage / retention.
+        monitoring_retention: 30d
+        monitoring_scrape_interval: 30s
+
+        # Grafana.
+        monitoring_grafana_admin_password: "CHANGE-ME-VAULT"
+        monitoring_grafana_root_url: "https://albedo-monitor.example.awi.de/"
+
+        # Alertmanager — leave empty to keep the default null receiver.
+        # When ready, set these and rerun.
+        monitoring_alertmanager_email_to: ""           # e.g. hpc-oncall@awi.de
+        monitoring_alertmanager_email_from: ""         # e.g. alerts@albedo.awi.de
+        monitoring_alertmanager_email_smarthost: ""    # e.g. mail.awi.de:25
+        monitoring_alertmanager_webex_relay_url: ""    # e.g. https://webex-bot.awi.de/alerts

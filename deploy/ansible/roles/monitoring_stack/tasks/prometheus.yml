@@ -1,0 +1,64 @@
+---
+- name: Ensure Prometheus directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0755"
+  loop:
+    - /etc/prometheus
+    - /etc/prometheus/rules
+    - /etc/prometheus/file_sd
+    - "{{ monitoring_storage_path }}"
+
+- name: Render Prometheus main config
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: root
+    group: prometheus
+    mode: "0644"
+  notify: reload prometheus
+
+- name: Render Prometheus file_sd targets
+  ansible.builtin.template:
+    src: slurm_targets.yml.j2
+    dest: /etc/prometheus/file_sd/slurm.yml
+    owner: root
+    group: prometheus
+    mode: "0644"
+  # Prometheus picks up file_sd changes without a reload.
+
+- name: Install recording rules
+  ansible.builtin.copy:
+    src: prometheus/rules/recording.yml
+    dest: /etc/prometheus/rules/recording.yml
+    owner: root
+    group: prometheus
+    mode: "0644"
+  notify: reload prometheus
+
+- name: Install alert rules
+  ansible.builtin.copy:
+    src: prometheus/rules/alerts.yml
+    dest: /etc/prometheus/rules/alerts.yml
+    owner: root
+    group: prometheus
+    mode: "0644"
+  notify: reload prometheus
+
+- name: Override /etc/default/prometheus
+  ansible.builtin.template:
+    src: prometheus.default.j2
+    dest: /etc/default/prometheus
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart prometheus
+
+- name: Ensure Prometheus service is enabled and running
+  ansible.builtin.systemd:
+    name: prometheus
+    enabled: true
+    state: started

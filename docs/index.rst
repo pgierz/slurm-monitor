@@ -1,16 +1,21 @@
-.. Slurm Monitor documentation master file, created by
-   sphinx-quickstart on Mon May  5 10:56:34 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Slurm Monitor documentation
+slurm-monitor documentation
 ===========================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+Prometheus exporter for Slurm via slurmrestd, with Grafana dashboards and
+alert rules. Built for AWI's Albedo cluster.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Architecture
+
+   architecture/overview.md
+   architecture/metrics.md
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Operations
+
+   operations/install.md
+   operations/ops.md
+   operations/troubleshooting.md
+   operations/upgrade.md

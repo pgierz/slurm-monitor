@@ -1,0 +1,65 @@
+{{ ansible_managed | comment }}
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: [cluster, alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: default
+  routes:
+    - matchers:
+        - severity = critical
+      receiver: hpc-critical
+      group_wait: 10s
+      repeat_interval: 4h
+    - matchers:
+        - severity = warning
+      receiver: hpc-warnings
+      repeat_interval: 12h
+
+receivers:
+  - name: default
+    # No-op. Alerts still surface in the Alertmanager UI; nobody is paged.
+
+  - name: hpc-critical
+{% set has_email = monitoring_alertmanager_email_to and monitoring_alertmanager_email_from and monitoring_alertmanager_email_smarthost %}
+{% set has_webex = monitoring_alertmanager_webex_relay_url | length > 0 %}
+{% if has_email %}
+    email_configs:
+      - to: {{ monitoring_alertmanager_email_to }}
+        from: {{ monitoring_alertmanager_email_from }}
+        smarthost: {{ monitoring_alertmanager_email_smarthost }}
+        require_tls: {{ monitoring_alertmanager_email_require_tls | bool | lower }}
+        send_resolved: true
+{% endif %}
+{% if has_webex %}
+    webhook_configs:
+      - url: {{ monitoring_alertmanager_webex_relay_url }}
+        send_resolved: true
+{% endif %}
+{% if not (has_email or has_webex) %}
+    # No receiver wired up yet; set monitoring_alertmanager_email_*
+    # or monitoring_alertmanager_webex_relay_url in the inventory.
+{% endif %}
+
+  - name: hpc-warnings
+{% if has_email %}
+    email_configs:
+      - to: {{ monitoring_alertmanager_email_to }}
+        from: {{ monitoring_alertmanager_email_from }}
+        smarthost: {{ monitoring_alertmanager_email_smarthost }}
+        require_tls: {{ monitoring_alertmanager_email_require_tls | bool | lower }}
+        send_resolved: true
+{% endif %}
+{% if has_webex %}
+    webhook_configs:
+      - url: {{ monitoring_alertmanager_webex_relay_url }}
+        send_resolved: true
+{% endif %}
+
+inhibit_rules:
+  - source_matchers: [severity = critical]
+    target_matchers: [severity = warning]
+    equal: [cluster, alertname]

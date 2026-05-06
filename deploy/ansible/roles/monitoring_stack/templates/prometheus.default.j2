@@ -1,0 +1,2 @@
+{{ ansible_managed | comment }}
+ARGS="--web.listen-address={{ monitoring_prometheus_listen }} --storage.tsdb.retention.time={{ monitoring_retention }} --storage.tsdb.path={{ monitoring_storage_path }} --config.file=/etc/prometheus/prometheus.yml"

@@ -1,0 +1,76 @@
+groups:
+  - name: slurm.recording
+    interval: 30s
+    rules:
+      # Cluster-level CPU utilization.
+      - record: slurm:cluster_cpu_alloc:sum
+        expr: sum by (cluster) (slurm_node_cpus_alloc)
+
+      - record: slurm:cluster_cpu_total:sum
+        expr: sum by (cluster) (slurm_node_cpus_total)
+
+      - record: slurm:cluster_cpu_utilization:ratio
+        expr: |
+          slurm:cluster_cpu_alloc:sum
+          /
+          clamp_min(slurm:cluster_cpu_total:sum, 1)
+
+      # Per-partition CPU utilization.
+      - record: slurm:partition_cpu_alloc:sum
+        expr: sum by (cluster, partition) (slurm_node_cpus_alloc)
+
+      - record: slurm:partition_cpu_total:sum
+        expr: sum by (cluster, partition) (slurm_node_cpus_total)
+
+      - record: slurm:partition_cpu_utilization:ratio
+        expr: |
+          slurm:partition_cpu_alloc:sum
+          /
+          clamp_min(slurm:partition_cpu_total:sum, 1)
+
+      # GPU utilization (allocation-based, since we deliberately skip DCGM).
+      - record: slurm:partition_gpu_alloc:sum
+        expr: sum by (cluster, partition, gpu_type) (slurm_partition_gpus_alloc)
+
+      - record: slurm:partition_gpu_total:sum
+        expr: sum by (cluster, partition, gpu_type) (slurm_partition_gpus_total)
+
+      - record: slurm:partition_gpu_utilization:ratio
+        expr: |
+          slurm:partition_gpu_alloc:sum
+          /
+          clamp_min(slurm:partition_gpu_total:sum, 1)
+
+      # Node-state rollups.
+      - record: slurm:nodes_in_state:sum
+        expr: sum by (cluster, state) (slurm_nodes_state_count)
+
+      - record: slurm:nodes_drained:count
+        expr: |
+          count by (cluster) (
+            max by (cluster, node) (slurm_node_state{state=~"DRAIN|DRAINED|DRAINING"}) == 1
+          )
+
+      - record: slurm:nodes_down:count
+        expr: |
+          count by (cluster) (
+            max by (cluster, node) (slurm_node_state{state=~"DOWN|NOT_RESPONDING"}) == 1
+          )
+
+      # Job-state rollups.
+      - record: slurm:jobs_running:sum
+        expr: sum by (cluster, partition) (slurm_jobs{state="RUNNING"})
+
+      - record: slurm:jobs_pending:sum
+        expr: sum by (cluster, partition) (slurm_jobs{state="PENDING"})
+
+      # Wait-time pressure: average current wait of pending jobs by partition.
+      - record: slurm:partition_pending_wait_avg:seconds
+        expr: |
+          slurm_jobs_wait_seconds_sum
+          /
+          clamp_min(slurm_jobs{state="PENDING"}, 1)
+
+      # Top "reason" pending counts (used by alerts on resource pressure).
+      - record: slurm:pending_by_reason:sum
+        expr: sum by (cluster, reason) (slurm_jobs_pending_by_reason)

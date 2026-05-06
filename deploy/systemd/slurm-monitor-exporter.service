@@ -1,0 +1,52 @@
+[Unit]
+Description=Slurm Prometheus exporter (Apptainer)
+Documentation=https://slurm-monitor.readthedocs.io
+After=network-online.target slurmctld.service
+Wants=network-online.target
+# We require the JWT file to exist before we start.
+After=slurm-monitor-jwt.service
+Requires=slurm-monitor-jwt.service
+
+[Service]
+Type=simple
+User=slurm-monitor
+Group=slurm-monitor
+EnvironmentFile=-/etc/slurm-monitor/exporter.env
+# Defaults that the EnvironmentFile may override.
+Environment=SLURM_MONITOR_SERVER_BIND_HOST=0.0.0.0
+Environment=SLURM_MONITOR_SERVER_BIND_PORT=9817
+Environment=SLURM_MONITOR_AUTH_TOKEN_FILE=/run/slurm-monitor/jwt
+Environment=SLURM_MONITOR_AUTH_USER=slurm
+Environment=SLURM_MONITOR_SLURM_BASE_URL=http://127.0.0.1:6820
+Environment=SLURM_MONITOR_SLURM_CLUSTER=albedo
+Environment=APPTAINER_SILENT=1
+
+ExecStart=/usr/bin/apptainer run \
+    --cleanenv \
+    --no-home \
+    --bind /run/slurm-monitor:/run/slurm-monitor:ro \
+    --env SLURM_MONITOR_SERVER_BIND_HOST=${SLURM_MONITOR_SERVER_BIND_HOST} \
+    --env SLURM_MONITOR_SERVER_BIND_PORT=${SLURM_MONITOR_SERVER_BIND_PORT} \
+    --env SLURM_MONITOR_AUTH_TOKEN_FILE=${SLURM_MONITOR_AUTH_TOKEN_FILE} \
+    --env SLURM_MONITOR_AUTH_USER=${SLURM_MONITOR_AUTH_USER} \
+    --env SLURM_MONITOR_SLURM_BASE_URL=${SLURM_MONITOR_SLURM_BASE_URL} \
+    --env SLURM_MONITOR_SLURM_CLUSTER=${SLURM_MONITOR_SLURM_CLUSTER} \
+    /opt/slurm-monitor/slurm-monitor-exporter.sif
+
+Restart=on-failure
+RestartSec=10s
+TimeoutStopSec=20s
+
+# Sandboxing — Apptainer adds its own user-namespace isolation, but we lock
+# down the systemd unit too.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ReadOnlyPaths=/etc/slurm-monitor
+
+[Install]
+WantedBy=multi-user.target

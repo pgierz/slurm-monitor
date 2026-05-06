@@ -1,0 +1,79 @@
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+Stage: build
+
+%files
+    . /src/slurm-monitor
+
+%post
+    set -eux
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        build-essential
+    rm -rf /var/lib/apt/lists/*
+
+    python -m venv /opt/venv
+    /opt/venv/bin/pip install --upgrade pip wheel build
+    /opt/venv/bin/pip install --no-cache-dir /src/slurm-monitor
+
+# ---------------------------------------------------------------------------
+Bootstrap: docker
+From: python:3.12-slim-bookworm
+Stage: final
+
+%files from build
+    /opt/venv /opt/venv
+
+%post
+    set -eux
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        tini \
+        curl
+    rm -rf /var/lib/apt/lists/*
+    # Run as a non-root user inside the container; UID is irrelevant under
+    # Apptainer's user-namespace model but a non-zero default is good hygiene.
+    useradd --uid 64088 --create-home --shell /usr/sbin/nologin slurm-monitor
+    install -d -o slurm-monitor -g slurm-monitor /var/lib/slurm-monitor
+
+%environment
+    export PATH=/opt/venv/bin:$PATH
+    export PYTHONUNBUFFERED=1
+    export SLURM_MONITOR_SERVER_LOG_JSON=true
+
+%runscript
+    exec /usr/bin/tini -- /opt/venv/bin/slurm-monitor-exporter "$@"
+
+%startscript
+    exec /usr/bin/tini -- /opt/venv/bin/slurm-monitor-exporter "$@"
+
+%labels
+    Maintainer "AWI HPC Team <hpc@awi.de>"
+    Description "Slurm Prometheus exporter for AWI Albedo"
+    Source "https://github.com/pgierz/slurm-monitor"
+
+%help
+    Slurm Prometheus exporter packaged for Apptainer.
+
+    The exporter expects a JWT for slurmrestd. Provide one of:
+      - SLURM_MONITOR_AUTH_TOKEN_FILE=/run/slurm-monitor/jwt
+      - SLURM_MONITOR_AUTH_REFRESH_COMMAND="scontrol token lifespan=900"
+      - SLURM_MONITOR_AUTH_TOKEN=...   (not recommended)
+
+    Required bind mounts on a login node:
+      --bind /run/slurm-monitor:/run/slurm-monitor:ro    (for token_file)
+      --bind /etc/slurm/slurm.conf:/etc/slurm/slurm.conf:ro  (only if using
+                                                         scontrol token inside
+                                                         the container)
+
+    Networking:
+      Apptainer uses host networking by default; --net is NOT required.
+      The exporter binds 0.0.0.0:9817 (override with SLURM_MONITOR_SERVER_BIND_PORT).
+
+    Quickstart:
+      apptainer build slurm-monitor-exporter.sif slurm-monitor-exporter.def
+      apptainer run slurm-monitor-exporter.sif

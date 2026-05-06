@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: AWI HPC Team
+  description: Prometheus + Alertmanager + Grafana stack for the Albedo Slurm cluster.
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+dependencies: []

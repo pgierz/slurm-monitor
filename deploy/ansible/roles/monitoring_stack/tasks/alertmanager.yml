@@ -1,0 +1,35 @@
+---
+- name: Ensure Alertmanager directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: "0755"
+  loop:
+    - /etc/alertmanager
+    - "{{ monitoring_alertmanager_storage }}"
+
+- name: Render Alertmanager config
+  ansible.builtin.template:
+    src: alertmanager.yml.j2
+    dest: /etc/alertmanager/alertmanager.yml
+    owner: root
+    group: prometheus
+    mode: "0640"
+  notify: restart alertmanager
+
+- name: Override /etc/default/prometheus-alertmanager
+  ansible.builtin.template:
+    src: alertmanager.default.j2
+    dest: /etc/default/prometheus-alertmanager
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart alertmanager
+
+- name: Ensure Alertmanager service is enabled and running
+  ansible.builtin.systemd:
+    name: prometheus-alertmanager
+    enabled: true
+    state: started

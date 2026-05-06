@@ -1,0 +1,73 @@
+---
+- name: Ensure Grafana provisioning directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+  loop:
+    - /etc/grafana/provisioning
+    - /etc/grafana/provisioning/datasources
+    - /etc/grafana/provisioning/dashboards
+
+- name: Ensure Grafana dashboards target directory exists
+  ansible.builtin.file:
+    path: "{{ monitoring_grafana_dashboards_dir }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+- name: Render grafana.ini
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: grafana
+    mode: "0640"
+  notify: restart grafana
+
+- name: Install Grafana datasource provisioning
+  ansible.builtin.copy:
+    src: grafana/provisioning/datasources/prometheus.yml
+    dest: /etc/grafana/provisioning/datasources/prometheus.yml
+    owner: root
+    group: grafana
+    mode: "0644"
+  notify: restart grafana
+
+- name: Install Grafana dashboard provider
+  ansible.builtin.copy:
+    src: grafana/provisioning/dashboards/albedo.yml
+    dest: /etc/grafana/provisioning/dashboards/albedo.yml
+    owner: root
+    group: grafana
+    mode: "0644"
+  notify: restart grafana
+
+- name: Discover bundled dashboards
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/grafana/dashboards"
+    patterns: "*.json"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: monitoring_dashboard_files
+
+- name: Install bundled dashboards
+  ansible.builtin.copy:
+    src: "{{ item.path }}"
+    dest: "{{ monitoring_grafana_dashboards_dir }}/{{ item.path | basename }}"
+    owner: grafana
+    group: grafana
+    mode: "0644"
+  loop: "{{ monitoring_dashboard_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Ensure Grafana service is enabled and running
+  ansible.builtin.systemd:
+    name: grafana-server
+    enabled: true
+    state: started

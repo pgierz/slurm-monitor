@@ -1,0 +1,200 @@
+{
+  "uid": "albedo-overview",
+  "title": "Albedo / Cluster overview",
+  "tags": ["albedo", "slurm"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "albedo-prom" },
+        "hide": 2
+      },
+      {
+        "name": "cluster",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(slurm_node_cpus_total, cluster)",
+        "refresh": 2,
+        "current": { "text": "albedo", "value": "albedo" },
+        "includeAll": false
+      },
+      {
+        "name": "partition",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(slurm_node_cpus_total{cluster=\"$cluster\"}, partition)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "CPU utilization",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "slurm:cluster_cpu_utilization:ratio{cluster=\"$cluster\"}",
+          "legendFormat": "cpu",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.85 },
+              { "color": "red", "value": 0.97 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Allocated / total CPUs",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "slurm:cluster_cpu_alloc:sum{cluster=\"$cluster\"}", "legendFormat": "alloc", "refId": "A" },
+        { "expr": "slurm:cluster_cpu_total:sum{cluster=\"$cluster\"}", "legendFormat": "total", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "type": "stat",
+      "title": "Nodes DOWN",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "slurm:nodes_down:count{cluster=\"$cluster\"}", "legendFormat": "down", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Nodes drained",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "slurm:nodes_drained:count{cluster=\"$cluster\"}", "legendFormat": "drained", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Pending jobs",
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 5 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "sum(slurm:jobs_pending:sum{cluster=\"$cluster\"})", "legendFormat": "pending", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU utilization by partition",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "slurm:partition_cpu_utilization:ratio{cluster=\"$cluster\", partition=~\"$partition\"}",
+          "legendFormat": "{{partition}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Running vs pending jobs",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum by (partition) (slurm:jobs_running:sum{cluster=\"$cluster\", partition=~\"$partition\"})",
+          "legendFormat": "running {{partition}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (partition) (slurm:jobs_pending:sum{cluster=\"$cluster\", partition=~\"$partition\"})",
+          "legendFormat": "pending {{partition}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "GPU allocation by type",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum by (gpu_type) (slurm_partition_gpus_alloc{cluster=\"$cluster\", partition=~\"$partition\"})",
+          "legendFormat": "alloc {{gpu_type}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (gpu_type) (slurm_partition_gpus_total{cluster=\"$cluster\", partition=~\"$partition\"})",
+          "legendFormat": "total {{gpu_type}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "type": "bargauge",
+      "title": "Nodes by state",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "slurm:nodes_in_state:sum{cluster=\"$cluster\"}",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "orientation": "horizontal", "displayMode": "gradient" }
+    }
+  ]
+}

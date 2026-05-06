@@ -1,0 +1,40 @@
+{{ ansible_managed | comment }}
+global:
+  scrape_interval: {{ monitoring_scrape_interval }}
+  scrape_timeout: {{ monitoring_scrape_timeout }}
+  evaluation_interval: {{ monitoring_evaluation_interval }}
+  external_labels:
+    monitor: albedo-prom
+    cluster: {{ monitoring_cluster_name }}
+
+rule_files:
+  - /etc/prometheus/rules/recording.yml
+  - /etc/prometheus/rules/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 127.0.0.1:9093
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [127.0.0.1:9090]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: [127.0.0.1:9093]
+
+  - job_name: slurm-monitor
+    metrics_path: /metrics
+    scheme: http
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/file_sd/slurm.yml
+        refresh_interval: 1m
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "(.*):.*"
+        target_label: instance
+        replacement: $1

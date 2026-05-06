@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+{# Prometheus file_sd targets, generated from monitoring_slurm_targets. #}
+{% if not monitoring_slurm_targets %}
+[]
+{% else %}
+{% for t in monitoring_slurm_targets %}
+- targets:
+    - "{{ t.host }}:{{ t.port | default(9817) }}"
+  labels:
+    cluster: "{{ monitoring_cluster_name }}"
+{% for k, v in (t.labels | default({})).items() %}
+    {{ k }}: "{{ v }}"
+{% endfor %}
+{% endfor %}
+{% endif %}

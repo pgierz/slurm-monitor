@@ -1,0 +1,21 @@
+[Unit]
+Description=Refresh Slurm JWT for slurm-monitor exporter
+Documentation=https://slurm-monitor.readthedocs.io
+After=network-online.target munge.service
+Wants=network-online.target munge.service
+
+[Service]
+Type=oneshot
+# scontrol must run as a user that Munge accepts. By default that's `slurm`,
+# but on most clusters root works as well. Override via the drop-in if needed.
+User=slurm
+Group=slurm
+RuntimeDirectory=slurm-monitor
+RuntimeDirectoryMode=0750
+UMask=0027
+ExecStart=/usr/bin/bash -c 'scontrol token lifespan=900 username=slurm | sed -n "s/^SLURM_JWT=//p" > /run/slurm-monitor/jwt'
+# Tighten the file even though RuntimeDirectoryMode handles the directory.
+ExecStartPost=/usr/bin/install -m 0640 -o slurm -g slurm-monitor /run/slurm-monitor/jwt /run/slurm-monitor/jwt
+
+[Install]
+WantedBy=multi-user.target

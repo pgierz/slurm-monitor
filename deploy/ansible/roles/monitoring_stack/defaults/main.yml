@@ -1,0 +1,61 @@
+---
+# ============================================================================
+#  Cluster identity
+# ============================================================================
+monitoring_cluster_name: albedo
+
+# ============================================================================
+#  Slurm exporter targets (file_sd)
+#
+#  Each entry becomes one targets/labels block in
+#  /etc/prometheus/file_sd/slurm.yml.
+# ============================================================================
+monitoring_slurm_targets: []
+# Example:
+# monitoring_slurm_targets:
+#   - host: albedo1.example.awi.de
+#     port: 9817
+#     labels:
+#       role: login
+#       via: pull
+
+# ============================================================================
+#  Prometheus
+# ============================================================================
+monitoring_prometheus_listen: "0.0.0.0:9090"
+monitoring_retention: "30d"
+monitoring_scrape_interval: "30s"
+monitoring_scrape_timeout: "10s"
+monitoring_evaluation_interval: "30s"
+monitoring_storage_path: "/var/lib/prometheus/metrics2"
+
+# ============================================================================
+#  Alertmanager
+# ============================================================================
+monitoring_alertmanager_listen: "0.0.0.0:9093"
+monitoring_alertmanager_storage: "/var/lib/prometheus/alertmanager"
+
+# Email receiver (leave empty to skip).
+monitoring_alertmanager_email_to: ""
+monitoring_alertmanager_email_from: ""
+monitoring_alertmanager_email_smarthost: ""
+monitoring_alertmanager_email_require_tls: true
+
+# Webex relay receiver (leave empty to skip). The relay is a separate
+# AWI-internal service that translates Alertmanager JSON to Webex API calls.
+monitoring_alertmanager_webex_relay_url: ""
+
+# ============================================================================
+#  Grafana
+# ============================================================================
+monitoring_grafana_listen_port: 3000
+monitoring_grafana_admin_user: admin
+monitoring_grafana_admin_password: "admin"
+monitoring_grafana_root_url: ""    # e.g. "https://albedo-monitor.awi.de/"
+
+# Where the role drops dashboards on the target. Don't change without also
+# updating files/grafana/provisioning/dashboards/albedo.yml.
+monitoring_grafana_dashboards_dir: "/var/lib/grafana/dashboards/albedo"
+
+# Pin Grafana repo channel: "stable" or "beta".
+monitoring_grafana_channel: "stable"

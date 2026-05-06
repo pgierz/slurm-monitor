@@ -1,27 +1,28 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# Sphinx configuration.
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+project = "slurm-monitor"
+copyright = "2025, AWI HPC Team"
+author = "AWI HPC Team"
+release = "0.5.0"
 
-project = "Slurm Monitor"
-copyright = "2025, Paul Gierz"
-author = "Paul Gierz"
-release = "0.4.0"
+extensions = [
+    "myst_parser",
+]
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "linkify",
+    "tasklist",
+]
 
-extensions = []
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-
-
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]

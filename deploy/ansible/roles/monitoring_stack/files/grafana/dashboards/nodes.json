@@ -1,0 +1,86 @@
+{
+  "uid": "albedo-nodes",
+  "title": "Albedo / Node health",
+  "tags": ["albedo", "slurm", "nodes"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "albedo-prom" },
+        "hide": 2
+      },
+      {
+        "name": "cluster",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(slurm_node_cpus_total, cluster)",
+        "refresh": 2,
+        "current": { "text": "albedo", "value": "albedo" }
+      },
+      {
+        "name": "node",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(slurm_node_cpus_total{cluster=\"$cluster\"}, node)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "table",
+      "title": "Per-node snapshot",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 14 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        { "expr": "slurm_node_cpus_total{cluster=\"$cluster\", node=~\"$node\"}", "legendFormat": "cpus_total", "refId": "A", "format": "table", "instant": true },
+        { "expr": "slurm_node_cpus_alloc{cluster=\"$cluster\", node=~\"$node\"}", "legendFormat": "cpus_alloc", "refId": "B", "format": "table", "instant": true },
+        { "expr": "slurm_node_real_memory_mb{cluster=\"$cluster\", node=~\"$node\"}", "legendFormat": "mem_total_mb", "refId": "C", "format": "table", "instant": true },
+        { "expr": "slurm_node_alloc_memory_mb{cluster=\"$cluster\", node=~\"$node\"}", "legendFormat": "mem_alloc_mb", "refId": "D", "format": "table", "instant": true },
+        { "expr": "slurm_node_cpu_load{cluster=\"$cluster\", node=~\"$node\"}", "legendFormat": "load", "refId": "E", "format": "table", "instant": true }
+      ],
+      "transformations": [
+        { "id": "merge" },
+        { "id": "organize", "options": { "excludeByName": { "Time": true, "__name__": true, "job": true, "instance": true } } }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU load (selected nodes)",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "slurm_node_cpu_load{cluster=\"$cluster\", node=~\"$node\"}",
+          "legendFormat": "{{node}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Allocated memory (MB)",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "slurm_node_alloc_memory_mb{cluster=\"$cluster\", node=~\"$node\"}",
+          "legendFormat": "{{node}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+    }
+  ]
+}
