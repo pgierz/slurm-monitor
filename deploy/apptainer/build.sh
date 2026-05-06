@@ -67,20 +67,9 @@ REMOTE_FLAG=()
 case "${MODE}" in
   remote)
     REMOTE_FLAG=(--remote)
-    # Sanity-check that a remote endpoint is configured; otherwise the build
-    # fails late with a less-friendly error.
-    if ! "${RUNTIME[@]}" remote status >/dev/null 2>&1; then
-      cat >&2 <<'EOF'
-[build.sh] No remote endpoint configured for apptainer.
-
-Run once:
-  apptainer remote login
-(get a token from https://cloud.sylabs.io -> Access Tokens)
-
-Or set SLURM_MONITOR_BUILD_MODE=local|srun to skip the remote builder.
-EOF
-      exit 2
-    fi
+    # Note: we used to pre-check `apptainer remote status`, but it pings the
+    # cloud and false-positives when the login node has restricted egress.
+    # Let `build --remote` surface its own error if no token is configured.
     ;;
   local)
     : # nothing extra
