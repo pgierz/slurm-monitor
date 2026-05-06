@@ -5,8 +5,24 @@
 #   deploy/apptainer/build.sh [output.sif]
 #
 # Run from the repo root. Requires Apptainer >= 1.2 with --fakeroot or root.
+# On Albedo, run as root (sudo) — fakeroot is not available there.
 
 set -euo pipefail
+
+# Lmod's `module` is a shell function from /etc/profile.d/*.sh and is not
+# present in non-interactive bash (e.g. under `sudo`). Source it ourselves.
+if ! command -v module >/dev/null 2>&1; then
+  for init in /etc/profile.d/lmod.sh /etc/profile.d/z00_lmod.sh /etc/profile.d/modules.sh; do
+    if [[ -r "$init" ]]; then
+      # shellcheck disable=SC1090
+      source "$init"
+      break
+    fi
+  done
+fi
+if command -v module >/dev/null 2>&1; then
+  module load apptainer 2>/dev/null || true
+fi
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 DEF="${REPO_ROOT}/deploy/apptainer/slurm-monitor-exporter.def"
