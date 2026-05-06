@@ -3,7 +3,10 @@ From: python:3.12-slim-bookworm
 Stage: build
 
 %files
-    . /src/slurm-monitor
+    pyproject.toml /src/slurm-monitor/pyproject.toml
+    README.md      /src/slurm-monitor/README.md
+    LICENSE        /src/slurm-monitor/LICENSE
+    src            /src/slurm-monitor/src
 
 %post
     set -eux

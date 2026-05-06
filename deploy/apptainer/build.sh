@@ -2,10 +2,30 @@
 # Build the slurm-monitor-exporter Apptainer image.
 #
 # Usage:
-#   deploy/apptainer/build.sh [output.sif]
+#   ./deploy/apptainer/build.sh [output.sif]
 #
-# Run from the repo root. Requires Apptainer >= 1.2 with --fakeroot or root.
-# On Albedo, run as root (sudo) — fakeroot is not available there.
+# Default mode is `remote`: the build runs on the Sylabs cloud builder.
+# This avoids login-node RAM limits, sudo, fakeroot, and srun.
+#
+# One-time setup for remote mode:
+#   1. Create a token at https://cloud.sylabs.io  ->  Access Tokens
+#   2. apptainer remote login    # paste the token
+#
+# Modes (set with SLURM_MONITOR_BUILD_MODE):
+#   remote   apptainer build --remote ... (default)
+#   local    apptainer build ...           (needs root or --fakeroot + RAM)
+#   srun     wrap `local` in srun on a compute node
+#
+# Common env overrides:
+#   SLURM_MONITOR_BUILD_MODE=remote|local|srun   default: remote
+#   SLURM_MONITOR_BUILD_ACCOUNT=<acct>           srun: -A <acct>  (unset = SLURM default)
+#   SLURM_MONITOR_BUILD_PARTITION=<part>         srun: -p <part>
+#   SLURM_MONITOR_BUILD_MEM=32G                  srun: --mem
+#   SLURM_MONITOR_BUILD_TIME=00:30:00            srun: --time
+#
+# Note on remote mode: the entire repo (the directory containing the .def
+# file) is tarballed and uploaded to Sylabs cloud as the build context.
+# Make sure no secrets sit in the working tree.
 
 set -euo pipefail
 
@@ -41,26 +61,57 @@ else
   exit 1
 fi
 
-# Login-node RAM is not enough for squashfs creation; build on a compute node.
-# Disable by exporting SLURM_MONITOR_BUILD_ON_COMPUTE=0.
-if [[ "${SLURM_MONITOR_BUILD_ON_COMPUTE:-1}" != "0" ]] && command -v srun >/dev/null 2>&1; then
-  SRUN_ACCOUNT="${SLURM_MONITOR_BUILD_ACCOUNT:-computing.computing}"
-  SRUN_MEM="${SLURM_MONITOR_BUILD_MEM:-32G}"
-  SRUN_TIME="${SLURM_MONITOR_BUILD_TIME:-00:30:00}"
-  RUNTIME=(srun -A "${SRUN_ACCOUNT}" --mem="${SRUN_MEM}" --time="${SRUN_TIME}" "${RUNTIME[@]}")
-fi
+MODE="${SLURM_MONITOR_BUILD_MODE:-remote}"
 
-if [[ "${EUID}" -ne 0 ]]; then
+REMOTE_FLAG=()
+case "${MODE}" in
+  remote)
+    REMOTE_FLAG=(--remote)
+    # Sanity-check that a remote endpoint is configured; otherwise the build
+    # fails late with a less-friendly error.
+    if ! "${RUNTIME[@]}" remote status >/dev/null 2>&1; then
+      cat >&2 <<'EOF'
+[build.sh] No remote endpoint configured for apptainer.
+
+Run once:
+  apptainer remote login
+(get a token from https://cloud.sylabs.io -> Access Tokens)
+
+Or set SLURM_MONITOR_BUILD_MODE=local|srun to skip the remote builder.
+EOF
+      exit 2
+    fi
+    ;;
+  local)
+    : # nothing extra
+    ;;
+  srun)
+    if ! command -v srun >/dev/null 2>&1; then
+      echo "[build.sh] mode=srun but srun not in PATH" >&2
+      exit 2
+    fi
+    SRUN_ARGS=(--mem="${SLURM_MONITOR_BUILD_MEM:-32G}" --time="${SLURM_MONITOR_BUILD_TIME:-00:30:00}")
+    [[ -n "${SLURM_MONITOR_BUILD_ACCOUNT:-}"  ]] && SRUN_ARGS=(-A "${SLURM_MONITOR_BUILD_ACCOUNT}"  "${SRUN_ARGS[@]}")
+    [[ -n "${SLURM_MONITOR_BUILD_PARTITION:-}" ]] && SRUN_ARGS=(-p "${SLURM_MONITOR_BUILD_PARTITION}" "${SRUN_ARGS[@]}")
+    RUNTIME=(srun "${SRUN_ARGS[@]}" "${RUNTIME[@]}")
+    ;;
+  *)
+    echo "[build.sh] invalid SLURM_MONITOR_BUILD_MODE=${MODE} (expected: remote|local|srun)" >&2
+    exit 2
+    ;;
+esac
+
+# fakeroot only matters for non-remote, non-root builds.
+FAKEROOT_FLAG=()
+if [[ "${MODE}" != "remote" && "${EUID}" -ne 0 ]]; then
   FAKEROOT_FLAG=(--fakeroot)
-else
-  FAKEROOT_FLAG=()
 fi
 
-echo "Building ${OUT} with: ${RUNTIME[*]}"
-"${RUNTIME[@]}" build "${FAKEROOT_FLAG[@]}" "${OUT}" "${DEF}"
+echo "[build.sh] mode=${MODE} out=${OUT}"
+echo "[build.sh] cmd: ${RUNTIME[*]} build ${REMOTE_FLAG[*]:-} ${FAKEROOT_FLAG[*]:-} ${OUT} ${DEF}"
+"${RUNTIME[@]}" build "${REMOTE_FLAG[@]}" "${FAKEROOT_FLAG[@]}" "${OUT}" "${DEF}"
 
-echo "Built: ${OUT}"
-# inspect cannot run under srun wrapper if shell propagation is off; run plain.
+echo "[build.sh] built: ${OUT}"
 if command -v apptainer >/dev/null 2>&1; then
   apptainer inspect "${OUT}" || true
 elif command -v singularity >/dev/null 2>&1; then
