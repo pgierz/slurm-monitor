@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   # Preferred Xcode on the macos-15 image; the select step falls back to the
@@ -82,6 +82,12 @@ jobs:
             grep -n -E "error:|failed" "$RUNNER_TEMP/logs/swift-test.log" | sort -u | head -n 200
             exit 1
           }
+
+      - name: Publish condensed output to the ci-output branch
+        if: always() && steps.pkg.outputs.present == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ios/scripts/publish-ci-output.sh slurmkit "$RUNNER_TEMP/logs"
 
       - name: Upload raw logs
         if: always() && steps.pkg.outputs.present == 'true'
@@ -203,6 +209,12 @@ jobs:
         if: always() && steps.pkg.outputs.present == 'true'
         working-directory: ios
         run: scripts/extract-screenshots.sh "$RESULT_BUNDLE" "$SCREENSHOT_DIR" "$DIRECT_DIR"
+
+      - name: Publish condensed output to the ci-output branch
+        if: always() && steps.pkg.outputs.present == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ios/scripts/publish-ci-output.sh app ios/build/logs ios/screenshots
 
       - name: Upload the screenshots
         if: always() && steps.pkg.outputs.present == 'true'
