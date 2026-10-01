@@ -1,0 +1,30 @@
+===== swift-build.log: matching lines =====
+===== swift-build.log: last 60 lines =====
+Building for debugging...
+[0/7] /Users/runner/work/slurm-monitor/slurm-monitor/ios/SlurmKit/.build/arm64-apple-macosx/debug/SlurmKitPackageTests.derived/runner.swift
+[1/7] Write sources
+[4/7] Write swift-version--79AA4F9932D1E87A.txt
+[6/16] Emitting module SlurmKit
+[7/19] Compiling SlurmKit SnapshotCache.swift
+[8/19] Compiling SlurmKit SnapshotLoader.swift
+[9/19] Compiling SlurmKit Transport.swift
+[10/19] Compiling SlurmKit Constants.swift
+[11/19] Compiling SlurmKit Credentials.swift
+[12/19] Compiling SlurmKit Formatters.swift
+[13/19] Compiling SlurmKit Models.swift
+[14/19] Compiling SlurmKit OIDC.swift
+[15/19] Compiling SlurmKit SampleData.swift
+[16/19] Compiling SlurmKit ServerSettings.swift
+[17/19] Compiling SlurmKit SlurmClient.swift
+[18/24] Emitting module SlurmKitTests
+[19/26] Compiling SlurmKitTests OIDCTests.swift
+[20/26] Compiling SlurmKitTests TestSupport.swift
+[21/26] Compiling SlurmKitTests FormatterTests.swift
+[22/26] Compiling SlurmKitTests LoaderTests.swift
+[23/26] Compiling SlurmKitTests ClientTests.swift
+[24/26] Compiling SlurmKitTests DecodingTests.swift
+[25/28] Emitting module SlurmKitPackageTests
+[26/28] Compiling SlurmKitPackageTests runner.swift
+[26/28] Write Objects.LinkFileList
+[27/28] Linking SlurmKitPackageTests
+Build complete! (18.80s)
