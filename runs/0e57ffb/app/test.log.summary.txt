@@ -1,0 +1,125 @@
+===== test.log: matching lines =====
+25:2026-10-01 14:57:51.286725+0000 SlurmMonitor[5474:20429] fopen failed for data file: errno = 2 (No such file or directory)
+27:2026-10-01 14:57:51.529606+0000 SlurmMonitor[5474:20429] fopen failed for data file: errno = 2 (No such file or directory)
+30:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuExtraLargeLive]' passed (0.630 seconds).
+33:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuLargeAccented]' passed (0.068 seconds).
+36:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuLargeLive]' passed (0.043 seconds).
+39:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuLargeNoMetrics]' passed (0.585 seconds).
+42:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuMediumLive]' passed (0.071 seconds).
+45:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuMediumStale]' passed (0.014 seconds).
+48:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuSmall148]' passed (0.013 seconds).
+51:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuSmallLive]' passed (0.073 seconds).
+54:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuSmallNoMetrics]' passed (0.009 seconds).
+57:Test Case '-[ScreenshotTests.GpuSnapshotTests testGpuSmallVpnNeeded]' passed (0.106 seconds).
+59:Test Case '-[ScreenshotTests.GpuSnapshotTests testGridPlanAndCellWidth]' passed (0.001 seconds).
+61:Test Case '-[ScreenshotTests.GpuSnapshotTests testSparklinePoints]' passed (0.001 seconds).
+62:Test Suite 'GpuSnapshotTests' passed at 2026-10-01 14:57:52.792.
+63:	 Executed 12 tests, with 0 failures (0 unexpected) in 1.613 (1.615) seconds
+67:Test Case '-[ScreenshotTests.LockScreenSnapshotTests testLockCircular]' passed (0.135 seconds).
+70:Test Case '-[ScreenshotTests.LockScreenSnapshotTests testLockInline]' passed (0.008 seconds).
+73:Test Case '-[ScreenshotTests.LockScreenSnapshotTests testLockRectangular]' passed (0.072 seconds).
+76:Test Case '-[ScreenshotTests.LockScreenSnapshotTests testLockRectangularVpn]' passed (0.491 seconds).
+77:Test Suite 'LockScreenSnapshotTests' passed at 2026-10-01 14:57:53.498.
+78:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.705 (0.706) seconds
+81:Test Case '-[ScreenshotTests.NodesSnapshotTests testEmptyPartitionFallsBackToTheDefault]' passed (0.001 seconds).
+83:Test Case '-[ScreenshotTests.NodesSnapshotTests testGridPlanShrinksAndCaps]' passed (0.002 seconds).
+86:Test Case '-[ScreenshotTests.NodesSnapshotTests testNodesExtraLargeAccented]' passed (0.155 seconds).
+89:Test Case '-[ScreenshotTests.NodesSnapshotTests testNodesExtraLargeLive]' passed (0.026 seconds).
+92:Test Case '-[ScreenshotTests.NodesSnapshotTests testNodesMediumLive]' passed (0.036 seconds).
+95:Test Case '-[ScreenshotTests.NodesSnapshotTests testNodesSmall158]' passed (0.969 seconds).
+98:Test Case '-[ScreenshotTests.NodesSnapshotTests testNodesSmallLive]' passed (0.012 seconds).
+101:Test Case '-[ScreenshotTests.NodesSnapshotTests testNodesSmallStale]' passed (0.010 seconds).
+103:Test Case '-[ScreenshotTests.NodesSnapshotTests testReducedColourOpacities]' passed (0.016 seconds).
+105:Test Case '-[ScreenshotTests.NodesSnapshotTests testRingDiameterFollowsTheHeight]' passed (0.000 seconds).
+106:Test Suite 'NodesSnapshotTests' passed at 2026-10-01 14:57:54.727.
+107:	 Executed 10 tests, with 0 failures (0 unexpected) in 1.227 (1.229) seconds
+110:Test Case '-[ScreenshotTests.QosSnapshotTests testFooterCountsTheQosLeftOut]' passed (0.001 seconds).
+113:Test Case '-[ScreenshotTests.QosSnapshotTests testQosMediumLive]' passed (0.385 seconds).
+114:Test Suite 'QosSnapshotTests' passed at 2026-10-01 14:57:55.113.
+115:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.386 (0.386) seconds
+118:Test Case '-[ScreenshotTests.QueueSnapshotTests testDeadlineBoundsALoad]' passed (0.203 seconds).
+120:Test Case '-[ScreenshotTests.QueueSnapshotTests testLiveContentGetsAStaleEntry]' passed (0.001 seconds).
+122:Test Case '-[ScreenshotTests.QueueSnapshotTests testLockScreenEntriesTurnStaleEachInItsTime]' passed (0.000 seconds).
+125:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLarge338x354]' passed (0.032 seconds).
+128:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLargeLive]' passed (0.024 seconds).
+131:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumLive]' passed (0.016 seconds).
+134:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumStale]' passed (4.021 seconds).
+137:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmall148]' passed (0.019 seconds).
+140:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmallLive]' passed (0.012 seconds).
+142:Test Case '-[ScreenshotTests.QueueSnapshotTests testRowCapacityFollowsTheHeight]' passed (0.000 seconds).
+145:Test Case '-[ScreenshotTests.QueueSnapshotTests testSignInNeededSmall]' passed (0.026 seconds).
+148:Test Case '-[ScreenshotTests.QueueSnapshotTests testVpnNeededSmall]' passed (0.011 seconds).
+149:Test Suite 'QueueSnapshotTests' passed at 2026-10-01 14:58:01.071.
+150:	 Executed 12 tests, with 0 failures (0 unexpected) in 4.366 (5.957) seconds
+154:Test Case '-[ScreenshotTests.RunnersSnapshotTests testCiSmallLive]' passed (0.076 seconds).
+157:Test Case '-[ScreenshotTests.RunnersSnapshotTests testDaskMediumEmpty]' passed (0.025 seconds).
+160:Test Case '-[ScreenshotTests.RunnersSnapshotTests testDaskMediumLive]' passed (0.029 seconds).
+163:Test Case '-[ScreenshotTests.RunnersSnapshotTests testJupyterHubSmall148]' passed (0.104 seconds).
+166:Test Case '-[ScreenshotTests.RunnersSnapshotTests testJupyterHubSmallLive]' passed (0.011 seconds).
+167:Test Suite 'RunnersSnapshotTests' passed at 2026-10-01 14:58:01.317.
+168:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.245 (0.246) seconds
+169:Test Suite 'ScreenshotTests.xctest' passed at 2026-10-01 14:58:01.317.
+170:	 Executed 45 tests, with 0 failures (0 unexpected) in 8.542 (10.140) seconds
+171:Test Suite 'All tests' passed at 2026-10-01 14:58:01.318.
+172:	 Executed 45 tests, with 0 failures (0 unexpected) in 8.542 (10.141) seconds
+===== test.log: last 60 lines =====
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLarge338x354]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-large-338x354.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLarge338x354]' passed (0.032 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLargeLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-large-live.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLargeLive]' passed (0.024 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-medium-live.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumLive]' passed (0.016 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumStale]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-medium-stale.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumStale]' passed (4.021 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmall148]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-small-148.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmall148]' passed (0.019 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmallLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-small-live.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmallLive]' passed (0.012 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testRowCapacityFollowsTheHeight]' started.
+Test Case '-[ScreenshotTests.QueueSnapshotTests testRowCapacityFollowsTheHeight]' passed (0.000 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testSignInNeededSmall]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/state-signin-small.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testSignInNeededSmall]' passed (0.026 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testVpnNeededSmall]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/state-vpn-small.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testVpnNeededSmall]' passed (0.011 seconds).
+Test Suite 'QueueSnapshotTests' passed at 2026-10-01 14:58:01.071.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 4.366 (5.957) seconds
+Test Suite 'RunnersSnapshotTests' started at 2026-10-01 14:58:01.071.
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testCiSmallLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/ci-small-live.png
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testCiSmallLive]' passed (0.076 seconds).
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testDaskMediumEmpty]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/dask-medium-empty.png
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testDaskMediumEmpty]' passed (0.025 seconds).
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testDaskMediumLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/dask-medium-live.png
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testDaskMediumLive]' passed (0.029 seconds).
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testJupyterHubSmall148]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/jupyterhub-small-148.png
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testJupyterHubSmall148]' passed (0.104 seconds).
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testJupyterHubSmallLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/jupyterhub-small-live.png
+Test Case '-[ScreenshotTests.RunnersSnapshotTests testJupyterHubSmallLive]' passed (0.011 seconds).
+Test Suite 'RunnersSnapshotTests' passed at 2026-10-01 14:58:01.317.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.245 (0.246) seconds
+Test Suite 'ScreenshotTests.xctest' passed at 2026-10-01 14:58:01.317.
+	 Executed 45 tests, with 0 failures (0 unexpected) in 8.542 (10.140) seconds
+Test Suite 'All tests' passed at 2026-10-01 14:58:01.318.
+	 Executed 45 tests, with 0 failures (0 unexpected) in 8.542 (10.141) seconds
+2026-10-01 14:58:05.418 xcodebuild[2651:11030] [MT] IDETestOperationsObserverDebug: 119.559 elapsed -- Testing started completed.
+2026-10-01 14:58:05.418 xcodebuild[2651:11030] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-01 14:58:05.418 xcodebuild[2651:11030] [MT] IDETestOperationsObserverDebug: 119.559 sec, +119.559 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/slurm-monitor/slurm-monitor/ios/build/ScreenshotTests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
