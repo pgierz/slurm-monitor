@@ -1,0 +1,63 @@
+===== build-adhoc.log: matching lines =====
+840:2026-10-01 13:16:14.825 appintentsmetadataprocessor[3198:13627] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+===== build-adhoc.log: last 60 lines =====
+AppIntentsSSUTraining (in target 'ScreenshotTests' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest/Info.plist --temp-dir-path /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Intermediates.noindex/SlurmMonitor.build/Debug-iphonesimulator/ScreenshotTests.build/ssu --bundle-id de.awi.slurm-monitor.screenshot-tests --product-path /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest --extracted-metadata-path /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest/Metadata.appintents --metadata-file-list /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Intermediates.noindex/SlurmMonitor.build/Debug-iphonesimulator/ScreenshotTests.build/ScreenshotTests.DependencyMetadataFileList --archive-ssu-assets
+2026-10-01 13:16:15.623 appintentsnltrainingprocessor[3206:13660] Parsing options for appintentsnltrainingprocessor
+2026-10-01 13:16:15.625 appintentsnltrainingprocessor[3206:13660] No AppShortcuts found - Skipping.
+
+CodeSign /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest (in target 'ScreenshotTests' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest
+
+RegisterExecutionPolicyException /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest (in target 'ScreenshotTests' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    builtin-RegisterExecutionPolicyException /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest
+
+Touch /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest (in target 'ScreenshotTests' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    /usr/bin/touch -c /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/ScreenshotTests.xctest
+
+CodeSign /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/SlurmMonitor.debug.dylib (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/SlurmMonitor.debug.dylib
+
+CodeSign /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/__preview.dylib (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/__preview.dylib
+
+CodeSign /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Intermediates.noindex/SlurmMonitor.build/Debug-iphonesimulator/SlurmMonitor.build/SlurmMonitor.app.xcent --timestamp\=none --generate-entitlement-der /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app
+
+ValidateEmbeddedBinary /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/SlurmMonitorWidgets.appex (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/embeddedBinaryValidationUtility /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/PlugIns/SlurmMonitorWidgets.appex -signing-cert - -info-plist-path /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app/Info.plist
+
+RegisterExecutionPolicyException /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    builtin-RegisterExecutionPolicyException /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app
+
+Validate /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    builtin-validationUtility /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app (in target 'SlurmMonitor' from project 'SlurmMonitor')
+    cd /Users/runner/work/slurm-monitor/slurm-monitor/ios
+    /usr/bin/touch -c /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData/Build/Products/Debug-iphonesimulator/SlurmMonitor.app
+
+** TEST BUILD SUCCEEDED **
+

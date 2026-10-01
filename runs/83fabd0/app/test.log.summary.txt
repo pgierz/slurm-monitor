@@ -1,0 +1,61 @@
+===== test.log: matching lines =====
+25:2026-10-01 13:23:08.337915+0000 SlurmMonitor[17458:52874] fopen failed for data file: errno = 2 (No such file or directory)
+27:2026-10-01 13:23:08.702879+0000 SlurmMonitor[17458:52874] fopen failed for data file: errno = 2 (No such file or directory)
+30:Test Case '-[ScreenshotTests.PlaceholderSnapshotTests testPlaceholderMedium]' passed (0.559 seconds).
+33:Test Case '-[ScreenshotTests.PlaceholderSnapshotTests testPlaceholderSmall]' passed (0.012 seconds).
+34:Test Suite 'PlaceholderSnapshotTests' passed at 2026-10-01 13:23:08.856.
+35:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.572 (0.572) seconds
+36:Test Suite 'ScreenshotTests.xctest' passed at 2026-10-01 13:23:08.856.
+37:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.572 (0.572) seconds
+38:Test Suite 'All tests' passed at 2026-10-01 13:23:08.856.
+39:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.572 (0.573) seconds
+===== test.log: last 60 lines =====
+Command line invocation:
+    /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project SlurmMonitor.xcodeproj -scheme SlurmMonitor -configuration Debug -destination "platform=iOS Simulator,id=F0E646EF-4792-4F36-B48B-EC89B3A6B73B" -derivedDataPath /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/DerivedData -resultBundlePath /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/ScreenshotTests.xcresult -parallel-testing-enabled NO CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = -
+    DEVELOPMENT_TEAM = 
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  SlurmKit: /Users/runner/work/slurm-monitor/slurm-monitor/ios/SlurmKit
+
+Writing result bundle at path:
+	/Users/runner/work/slurm-monitor/slurm-monitor/ios/build/ScreenshotTests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:F0E646EF-4792-4F36-B48B-EC89B3A6B73B, OS:18.5, name:iPhone 16 }
+{ platform:iOS Simulator, arch:x86_64, id:F0E646EF-4792-4F36-B48B-EC89B3A6B73B, OS:18.5, name:iPhone 16 }
+2026-10-01 13:23:05.861535+0000 SlurmMonitor[17458:52427] [library] load_eligibility_plist: Failed to open /Users/runner/Library/Developer/CoreSimulator/Devices/F0E646EF-4792-4F36-B48B-EC89B3A6B73B/data/Containers/Data/Application/C24F71CE-095B-4E3D-88BC-C3B6DF7C64A6/private/var/db/eligibilityd/eligibility.plist: No such file or directory(2)
+Test Suite 'All tests' started at 2026-10-01 13:23:08.283.
+Test Suite 'ScreenshotTests.xctest' started at 2026-10-01 13:23:08.284.
+Test Suite 'PlaceholderSnapshotTests' started at 2026-10-01 13:23:08.284.
+Test Case '-[ScreenshotTests.PlaceholderSnapshotTests testPlaceholderMedium]' started.
+2026-10-01 13:23:08.337915+0000 SlurmMonitor[17458:52874] fopen failed for data file: errno = 2 (No such file or directory)
+2026-10-01 13:23:08.338251+0000 SlurmMonitor[17458:52874] Errors found! Invalidating cache...
+2026-10-01 13:23:08.702879+0000 SlurmMonitor[17458:52874] fopen failed for data file: errno = 2 (No such file or directory)
+2026-10-01 13:23:08.703011+0000 SlurmMonitor[17458:52874] Errors found! Invalidating cache...
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/placeholder-medium.png
+Test Case '-[ScreenshotTests.PlaceholderSnapshotTests testPlaceholderMedium]' passed (0.559 seconds).
+Test Case '-[ScreenshotTests.PlaceholderSnapshotTests testPlaceholderSmall]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/placeholder-small.png
+Test Case '-[ScreenshotTests.PlaceholderSnapshotTests testPlaceholderSmall]' passed (0.012 seconds).
+Test Suite 'PlaceholderSnapshotTests' passed at 2026-10-01 13:23:08.856.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.572 (0.572) seconds
+Test Suite 'ScreenshotTests.xctest' passed at 2026-10-01 13:23:08.856.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.572 (0.572) seconds
+Test Suite 'All tests' passed at 2026-10-01 13:23:08.856.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.572 (0.573) seconds
+2026-10-01 13:23:11.078 xcodebuild[3225:13757] [MT] IDETestOperationsObserverDebug: 409.912 elapsed -- Testing started completed.
+2026-10-01 13:23:11.079 xcodebuild[3225:13757] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-01 13:23:11.079 xcodebuild[3225:13757] [MT] IDETestOperationsObserverDebug: 409.914 sec, +409.914 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/slurm-monitor/slurm-monitor/ios/build/ScreenshotTests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
