@@ -1,0 +1,152 @@
+===== swift-test.log: matching lines =====
+9:Test Case '-[SlurmKitTests.ClientTests testBasePathOfTheServerURLIsKept]' passed (0.005 seconds).
+11:Test Case '-[SlurmKitTests.ClientTests testDecodingFailure]' passed (0.001 seconds).
+13:Test Case '-[SlurmKitTests.ClientTests testEveryoneSendsAStar]' passed (0.002 seconds).
+15:Test Case '-[SlurmKitTests.ClientTests testFailedRefreshGivesUnauthorized]' passed (0.001 seconds).
+17:Test Case '-[SlurmKitTests.ClientTests testMe]' passed (0.001 seconds).
+19:Test Case '-[SlurmKitTests.ClientTests testNoQueryWithoutParameters]' passed (0.000 seconds).
+21:Test Case '-[SlurmKitTests.ClientTests testNoRefreshWithoutRefreshToken]' passed (0.000 seconds).
+23:Test Case '-[SlurmKitTests.ClientTests testNotConfiguredAndNoCredentials]' passed (0.000 seconds).
+25:Test Case '-[SlurmKitTests.ClientTests testOtherFamilyRequests]' passed (0.001 seconds).
+27:Test Case '-[SlurmKitTests.ClientTests testQueueRequest]' passed (0.000 seconds).
+29:Test Case '-[SlurmKitTests.ClientTests testRefreshAndRetryOnceOn401WithOIDC]' passed (0.001 seconds).
+31:Test Case '-[SlurmKitTests.ClientTests testStatusMapping]' passed (0.001 seconds).
+33:Test Case '-[SlurmKitTests.ClientTests testUnauthenticatedEndpointsSendNoToken]' passed (0.001 seconds).
+35:Test Case '-[SlurmKitTests.ClientTests testUserDefaultsToTheSettingsUsername]' passed (0.001 seconds).
+37:Test Case '-[SlurmKitTests.ClientTests testUserScopeValues]' passed (0.000 seconds).
+38:Test Suite 'ClientTests' passed at 2026-10-01 14:33:39.307.
+39:	 Executed 15 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+42:Test Case '-[SlurmKitTests.DecodingTests testEncodedFieldNamesAreSnakeCase]' passed (0.003 seconds).
+44:Test Case '-[SlurmKitTests.DecodingTests testGpuExample]' passed (0.000 seconds).
+46:Test Case '-[SlurmKitTests.DecodingTests testGpuWithoutMetrics]' passed (0.001 seconds).
+48:Test Case '-[SlurmKitTests.DecodingTests testHealthAuthConfigAndMe]' passed (0.001 seconds).
+50:Test Case '-[SlurmKitTests.DecodingTests testNodesExample]' passed (0.000 seconds).
+52:Test Case '-[SlurmKitTests.DecodingTests testQosExample]' passed (0.001 seconds).
+54:Test Case '-[SlurmKitTests.DecodingTests testQueueExample]' passed (0.000 seconds).
+56:Test Case '-[SlurmKitTests.DecodingTests testQueueWithoutUser]' passed (0.000 seconds).
+58:Test Case '-[SlurmKitTests.DecodingTests testRunnersExample]' passed (0.000 seconds).
+60:Test Case '-[SlurmKitTests.DecodingTests testSamplesSurviveEncodingAndDecoding]' passed (0.007 seconds).
+62:Test Case '-[SlurmKitTests.DecodingTests testServerSampleGpu]' passed (0.002 seconds).
+64:Test Case '-[SlurmKitTests.DecodingTests testServerSampleGpuNoMetrics]' passed (0.001 seconds).
+66:Test Case '-[SlurmKitTests.DecodingTests testServerSampleNodes]' passed (0.001 seconds).
+68:Test Case '-[SlurmKitTests.DecodingTests testServerSampleQos]' passed (0.001 seconds).
+70:Test Case '-[SlurmKitTests.DecodingTests testServerSampleQueue]' passed (0.001 seconds).
+72:Test Case '-[SlurmKitTests.DecodingTests testServerSampleRunners]' passed (0.000 seconds).
+74:Test Case '-[SlurmKitTests.DecodingTests testUnknownEnumValuesDecode]' passed (0.000 seconds).
+75:Test Suite 'DecodingTests' passed at 2026-10-01 14:33:39.327.
+76:	 Executed 17 tests, with 0 failures (0 unexpected) in 0.019 (0.020) seconds
+79:Test Case '-[SlurmKitTests.FormatterTests testCardText]' passed (0.000 seconds).
+81:Test Case '-[SlurmKitTests.FormatterTests testClockTime]' passed (0.001 seconds).
+83:Test Case '-[SlurmKitTests.FormatterTests testCompactCount]' passed (0.000 seconds).
+85:Test Case '-[SlurmKitTests.FormatterTests testDurationWords]' passed (0.000 seconds).
+87:Test Case '-[SlurmKitTests.FormatterTests testElapsedOverLimit]' passed (0.000 seconds).
+89:Test Case '-[SlurmKitTests.FormatterTests testGpuDerivedValues]' passed (0.000 seconds).
+91:Test Case '-[SlurmKitTests.FormatterTests testHoursMinutes]' passed (0.000 seconds).
+93:Test Case '-[SlurmKitTests.FormatterTests testMemoryTemperaturePowerFairshare]' passed (0.000 seconds).
+95:Test Case '-[SlurmKitTests.FormatterTests testNodeDerivedValues]' passed (0.000 seconds).
+97:Test Case '-[SlurmKitTests.FormatterTests testPercent]' passed (0.000 seconds).
+99:Test Case '-[SlurmKitTests.FormatterTests testQosDerivedValues]' passed (0.000 seconds).
+101:Test Case '-[SlurmKitTests.FormatterTests testQueueAndRunnerDerivedValues]' passed (0.000 seconds).
+103:Test Case '-[SlurmKitTests.FormatterTests testQueueLineAndRatio]' passed (0.000 seconds).
+105:Test Case '-[SlurmKitTests.FormatterTests testSampleDataMatchesTheMockupFigures]' passed (0.000 seconds).
+106:Test Suite 'FormatterTests' passed at 2026-10-01 14:33:39.331.
+107:	 Executed 14 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+110:Test Case '-[SlurmKitTests.LoaderTests testCacheIsKeptPerParameterVariant]' passed (0.004 seconds).
+112:Test Case '-[SlurmKitTests.LoaderTests testCacheIsKeptPerServer]' passed (0.002 seconds).
+114:Test Case '-[SlurmKitTests.LoaderTests testCacheIsKeptPerUser]' passed (0.001 seconds).
+116:Test Case '-[SlurmKitTests.LoaderTests testCacheKeys]' passed (0.000 seconds).
+118:Test Case '-[SlurmKitTests.LoaderTests testDecodingFailureFallsBackToCache]' passed (0.001 seconds).
+120:Test Case '-[SlurmKitTests.LoaderTests testEveryoneIsCachedUnderItsOwnKey]' passed (0.001 seconds).
+122:Test Case '-[SlurmKitTests.LoaderTests testFileCacheStoresAndLoads]' passed (0.009 seconds).
+124:Test Case '-[SlurmKitTests.LoaderTests testFreshSnapshotIsLiveAndCached]' passed (0.002 seconds).
+126:Test Case '-[SlurmKitTests.LoaderTests testInMemoryCredentialStore]' passed (0.001 seconds).
+128:Test Case '-[SlurmKitTests.LoaderTests testMapKeepsTheState]' passed (0.000 seconds).
+130:Test Case '-[SlurmKitTests.LoaderTests testNoDataGivesVpnNeeded]' passed (0.001 seconds).
+132:Test Case '-[SlurmKitTests.LoaderTests testNotConfigured]' passed (0.001 seconds).
+134:Test Case '-[SlurmKitTests.LoaderTests testOldSnapshotGivesStale]' passed (0.000 seconds).
+136:Test Case '-[SlurmKitTests.LoaderTests testParseServerURL]' passed (0.000 seconds).
+138:Test Case '-[SlurmKitTests.LoaderTests testSettingsRoundTrip]' passed (0.004 seconds).
+140:Test Case '-[SlurmKitTests.LoaderTests testStaleFlagGivesStale]' passed (0.001 seconds).
+142:Test Case '-[SlurmKitTests.LoaderTests testUnauthorizedAndNoCredentialsGiveSignInNeeded]' passed (0.001 seconds).
+144:Test Case '-[SlurmKitTests.LoaderTests testUnreachableWithCacheGivesVpnNeededWithLastSnapshot]' passed (0.001 seconds).
+146:Test Case '-[SlurmKitTests.LoaderTests testUnreachableWithoutCacheGivesVpnNeededWithoutData]' passed (0.000 seconds).
+147:Test Suite 'LoaderTests' passed at 2026-10-01 14:33:39.363.
+148:	 Executed 19 tests, with 0 failures (0 unexpected) in 0.031 (0.032) seconds
+151:Test Case '-[SlurmKitTests.OIDCTests testAuthorizationCodeFromCallback]' passed (0.001 seconds).
+153:Test Case '-[SlurmKitTests.OIDCTests testAuthorizationURL]' passed (0.001 seconds).
+155:Test Case '-[SlurmKitTests.OIDCTests testAuthorizationURLAsksForConsentWithOfflineAccess]' passed (0.000 seconds).
+157:Test Case '-[SlurmKitTests.OIDCTests testChallengeMatchesRFC7636AppendixB]' passed (0.000 seconds).
+159:Test Case '-[SlurmKitTests.OIDCTests testDiscoveryURL]' passed (0.000 seconds).
+161:Test Case '-[SlurmKitTests.OIDCTests testErrors]' passed (0.000 seconds).
+163:Test Case '-[SlurmKitTests.OIDCTests testFormEncoding]' passed (0.000 seconds).
+165:Test Case '-[SlurmKitTests.OIDCTests testGeneratedVerifier]' passed (0.000 seconds).
+167:Test Case '-[SlurmKitTests.OIDCTests testPrepareAndCompleteAuthorization]' passed (0.000 seconds).
+169:Test Case '-[SlurmKitTests.OIDCTests testRefreshKeepsOrReplacesTheRefreshToken]' passed (0.000 seconds).
+170:Test Suite 'OIDCTests' passed at 2026-10-01 14:33:39.368.
+171:	 Executed 10 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+172:Test Suite 'SlurmKitPackageTests.xctest' passed at 2026-10-01 14:33:39.368.
+173:	 Executed 75 tests, with 0 failures (0 unexpected) in 0.074 (0.079) seconds
+174:Test Suite 'All tests' passed at 2026-10-01 14:33:39.368.
+175:	 Executed 75 tests, with 0 failures (0 unexpected) in 0.074 (0.083) seconds
+179:✔ Test run with 0 tests passed after 0.001 seconds.
+===== swift-test.log: last 60 lines =====
+Test Case '-[SlurmKitTests.LoaderTests testEveryoneIsCachedUnderItsOwnKey]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testFileCacheStoresAndLoads]' started.
+Test Case '-[SlurmKitTests.LoaderTests testFileCacheStoresAndLoads]' passed (0.009 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testFreshSnapshotIsLiveAndCached]' started.
+Test Case '-[SlurmKitTests.LoaderTests testFreshSnapshotIsLiveAndCached]' passed (0.002 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testInMemoryCredentialStore]' started.
+Test Case '-[SlurmKitTests.LoaderTests testInMemoryCredentialStore]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testMapKeepsTheState]' started.
+Test Case '-[SlurmKitTests.LoaderTests testMapKeepsTheState]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testNoDataGivesVpnNeeded]' started.
+Test Case '-[SlurmKitTests.LoaderTests testNoDataGivesVpnNeeded]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testNotConfigured]' started.
+Test Case '-[SlurmKitTests.LoaderTests testNotConfigured]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testOldSnapshotGivesStale]' started.
+Test Case '-[SlurmKitTests.LoaderTests testOldSnapshotGivesStale]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testParseServerURL]' started.
+Test Case '-[SlurmKitTests.LoaderTests testParseServerURL]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testSettingsRoundTrip]' started.
+Test Case '-[SlurmKitTests.LoaderTests testSettingsRoundTrip]' passed (0.004 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testStaleFlagGivesStale]' started.
+Test Case '-[SlurmKitTests.LoaderTests testStaleFlagGivesStale]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testUnauthorizedAndNoCredentialsGiveSignInNeeded]' started.
+Test Case '-[SlurmKitTests.LoaderTests testUnauthorizedAndNoCredentialsGiveSignInNeeded]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testUnreachableWithCacheGivesVpnNeededWithLastSnapshot]' started.
+Test Case '-[SlurmKitTests.LoaderTests testUnreachableWithCacheGivesVpnNeededWithLastSnapshot]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.LoaderTests testUnreachableWithoutCacheGivesVpnNeededWithoutData]' started.
+Test Case '-[SlurmKitTests.LoaderTests testUnreachableWithoutCacheGivesVpnNeededWithoutData]' passed (0.000 seconds).
+Test Suite 'LoaderTests' passed at 2026-10-01 14:33:39.363.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.031 (0.032) seconds
+Test Suite 'OIDCTests' started at 2026-10-01 14:33:39.363.
+Test Case '-[SlurmKitTests.OIDCTests testAuthorizationCodeFromCallback]' started.
+Test Case '-[SlurmKitTests.OIDCTests testAuthorizationCodeFromCallback]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testAuthorizationURL]' started.
+Test Case '-[SlurmKitTests.OIDCTests testAuthorizationURL]' passed (0.001 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testAuthorizationURLAsksForConsentWithOfflineAccess]' started.
+Test Case '-[SlurmKitTests.OIDCTests testAuthorizationURLAsksForConsentWithOfflineAccess]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testChallengeMatchesRFC7636AppendixB]' started.
+Test Case '-[SlurmKitTests.OIDCTests testChallengeMatchesRFC7636AppendixB]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testDiscoveryURL]' started.
+Test Case '-[SlurmKitTests.OIDCTests testDiscoveryURL]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testErrors]' started.
+Test Case '-[SlurmKitTests.OIDCTests testErrors]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testFormEncoding]' started.
+Test Case '-[SlurmKitTests.OIDCTests testFormEncoding]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testGeneratedVerifier]' started.
+Test Case '-[SlurmKitTests.OIDCTests testGeneratedVerifier]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testPrepareAndCompleteAuthorization]' started.
+Test Case '-[SlurmKitTests.OIDCTests testPrepareAndCompleteAuthorization]' passed (0.000 seconds).
+Test Case '-[SlurmKitTests.OIDCTests testRefreshKeepsOrReplacesTheRefreshToken]' started.
+Test Case '-[SlurmKitTests.OIDCTests testRefreshKeepsOrReplacesTheRefreshToken]' passed (0.000 seconds).
+Test Suite 'OIDCTests' passed at 2026-10-01 14:33:39.368.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'SlurmKitPackageTests.xctest' passed at 2026-10-01 14:33:39.368.
+	 Executed 75 tests, with 0 failures (0 unexpected) in 0.074 (0.079) seconds
+Test Suite 'All tests' passed at 2026-10-01 14:33:39.368.
+	 Executed 75 tests, with 0 failures (0 unexpected) in 0.074 (0.083) seconds
+◇ Test run started.
+↳ Testing Library Version: 124.4
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests passed after 0.001 seconds.
