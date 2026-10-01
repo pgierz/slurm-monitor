@@ -13,3 +13,6 @@ DerivedData/
 .build/
 .swiftpm/
 ios/screenshots/
+ios/Signing.xcconfig
+ios/App/Info.plist
+ios/Widgets/Info.plist

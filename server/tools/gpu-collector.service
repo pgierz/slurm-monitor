@@ -1,0 +1,26 @@
+[Unit]
+Description=Slurm Monitor GPU metrics collector (nvidia-smi as JSON)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/usr/bin/nvidia-smi
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/libexec/slurm-monitor/gpu_collector.py --port 9455 --interval 5
+Restart=on-failure
+RestartSec=10
+
+# No privileges are needed: nvidia-smi only reads the device nodes.
+DynamicUser=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+# The GPU device nodes must stay visible, so PrivateDevices is not set.
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target

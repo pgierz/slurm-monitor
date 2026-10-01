@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "cluster": "synthetic",
+  "generated_at": "2026-10-01T12:32:07Z",
+  "stale": false,
+  "data": {
+    "user": "grace",
+    "account": "ocean",
+    "fairshare": 0.5512,
+    "qos": [
+      {
+        "name": "12h",
+        "cpus_in_use": 11629,
+        "cpu_limit": 18000,
+        "running_jobs": 234,
+        "pending_jobs": 41,
+        "max_wall_seconds": 43200
+      },
+      {
+        "name": "30min",
+        "cpus_in_use": 8127,
+        "cpu_limit": null,
+        "running_jobs": 140,
+        "pending_jobs": 20,
+        "max_wall_seconds": 1800
+      },
+      {
+        "name": "48h",
+        "cpus_in_use": 5585,
+        "cpu_limit": 8000,
+        "running_jobs": 80,
+        "pending_jobs": 16,
+        "max_wall_seconds": 172800
+      },
+      {
+        "name": "1wk",
+        "cpus_in_use": 2,
+        "cpu_limit": 2000,
+        "running_jobs": 1,
+        "pending_jobs": 0,
+        "max_wall_seconds": 604800
+      }
+    ]
+  }
+}

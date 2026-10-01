@@ -1,0 +1,131 @@
+# XcodeGen project definition. The .xcodeproj is generated (`xcodegen` in this
+# directory) and never committed. See README.md.
+name: SlurmMonitor
+
+options:
+  bundleIdPrefix: de.awi
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+# Project.xcconfig holds an empty DEVELOPMENT_TEAM and optionally includes the
+# git-ignored Signing.xcconfig. DEVELOPMENT_TEAM is deliberately not set in
+# `settings:` below, because project settings would override the xcconfig.
+configFiles:
+  Debug: Project.xcconfig
+  Release: Project.xcconfig
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1,2"
+
+packages:
+  SlurmKit:
+    path: SlurmKit
+
+targets:
+  SlurmMonitor:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Slurm Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleURLName: de.awi.slurm-monitor.oauth
+            CFBundleTypeRole: Viewer
+            CFBundleURLSchemes:
+              - de.awi.slurm-monitor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor
+        PRODUCT_NAME: SlurmMonitor
+        CODE_SIGN_ENTITLEMENTS: App/SlurmMonitor.entitlements
+    dependencies:
+      - package: SlurmKit
+      - target: SlurmMonitorWidgets
+
+  SlurmMonitorWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Slurm Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor.widgets
+        CODE_SIGN_ENTITLEMENTS: Widgets/SlurmMonitorWidgets.entitlements
+    dependencies:
+      - package: SlurmKit
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+
+  ScreenshotTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ScreenshotTests
+      # The widget views are compiled into the test bundle as well, so they
+      # can be rendered to PNG. The @main entry point must stay out.
+      - path: Widgets
+        excludes:
+          - WidgetBundle.swift
+          - Info.plist
+          - "*.entitlements"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor.screenshot-tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/SlurmMonitor.app/SlurmMonitor
+        BUNDLE_LOADER: $(TEST_HOST)
+    dependencies:
+      - target: SlurmMonitor
+      - package: SlurmKit
+
+schemes:
+  SlurmMonitor:
+    build:
+      targets:
+        SlurmMonitor: all
+        SlurmMonitorWidgets: all
+        ScreenshotTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ScreenshotTests
+    archive:
+      config: Release

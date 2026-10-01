@@ -1,0 +1,24 @@
+# Slurm Monitor server.
+#
+# Build from the server directory:
+#   podman build -f deploy/Containerfile -t slurm-monitor-server .
+# Run:
+#   podman run --rm -p 8080:8080 \
+#     -v /etc/slurm-monitor:/etc/slurm-monitor:ro \
+#     -e SLURM_MONITOR_CONFIG=/etc/slurm-monitor/config.toml \
+#     slurm-monitor-server
+# Try without a cluster:
+#   podman run --rm -p 8080:8080 slurm-monitor-server --demo
+
+FROM docker.io/library/python:3.12-slim AS build
+WORKDIR /build
+COPY pyproject.toml README.md ./
+COPY src ./src
+RUN pip install --no-cache-dir --prefix=/install .
+
+FROM docker.io/library/python:3.12-slim
+COPY --from=build /install /usr/local
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin slurm-monitor
+USER slurm-monitor
+EXPOSE 8080
+ENTRYPOINT ["slurm-monitor-server", "--host", "0.0.0.0", "--port", "8080"]

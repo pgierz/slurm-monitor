@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "cluster": "synthetic",
+  "generated_at": "2026-10-01T12:32:07Z",
+  "stale": false,
+  "data": {
+    "metrics_available": true,
+    "total": 24,
+    "allocated": 22,
+    "idle_allocated": 5,
+    "pending_jobs": 10,
+    "longest_wait_seconds": 34624,
+    "types": [
+      {
+        "type": "a100",
+        "label": "A100",
+        "total": 16,
+        "allocated": 16
+      },
+      {
+        "type": "a40",
+        "label": "A40",
+        "total": 8,
+        "allocated": 6
+      }
+    ],
+    "nodes": [
+      {
+        "name": "gpu-005",
+        "type": "a100",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "busy",
+            "utilisation": 0.856,
+            "memory_used_mib": 31569,
+            "memory_total_mib": 40960,
+            "temperature_c": 69,
+            "power_w": 256,
+            "user": "carol"
+          },
+          {
+            "index": 1,
+            "state": "idle_allocated",
+            "utilisation": 0.02,
+            "memory_used_mib": 752,
+            "memory_total_mib": 40960,
+            "temperature_c": 35,
+            "power_w": 60,
+            "user": "dave"
+          },
+          {
+            "index": 2,
+            "state": "busy",
+            "utilisation": 0.757,
+            "memory_used_mib": 27897,
+            "memory_total_mib": 40960,
+            "temperature_c": 65,
+            "power_w": 233,
+            "user": "dave"
+          },
+          {
+            "index": 3,
+            "state": "idle_allocated",
+            "utilisation": 0.011,
+            "memory_used_mib": 393,
+            "memory_total_mib": 40960,
+            "temperature_c": 34,
+            "power_w": 57,
+            "user": "bob"
+          }
+        ]
+      },
+      {
+        "name": "gpu-006",
+        "type": "a100",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "busy",
+            "utilisation": 0.923,
+            "memory_used_mib": 34031,
+            "memory_total_mib": 40960,
+            "temperature_c": 72,
+            "power_w": 272,
+            "user": "bob"
+          },
+          {
+            "index": 1,
+            "state": "busy",
+            "utilisation": 0.821,
+            "memory_used_mib": 30285,
+            "memory_total_mib": 40960,
+            "temperature_c": 68,
+            "power_w": 248,
+            "user": "heidi"
+          },
+          {
+            "index": 2,
+            "state": "busy",
+            "utilisation": 0.663,
+            "memory_used_mib": 24460,
+            "memory_total_mib": 40960,
+            "temperature_c": 61,
+            "power_w": 211,
+            "user": "heidi"
+          },
+          {
+            "index": 3,
+            "state": "busy",
+            "utilisation": 0.938,
+            "memory_used_mib": 34588,
+            "memory_total_mib": 40960,
+            "temperature_c": 72,
+            "power_w": 275,
+            "user": "heidi"
+          }
+        ]
+      },
+      {
+        "name": "gpu-007",
+        "type": "a100",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "busy",
+            "utilisation": 0.938,
+            "memory_used_mib": 34590,
+            "memory_total_mib": 40960,
+            "temperature_c": 72,
+            "power_w": 275,
+            "user": "niaj"
+          },
+          {
+            "index": 1,
+            "state": "busy",
+            "utilisation": 0.655,
+            "memory_used_mib": 24166,
+            "memory_total_mib": 40960,
+            "temperature_c": 61,
+            "power_w": 209,
+            "user": "niaj"
+          },
+          {
+            "index": 2,
+            "state": "idle_allocated",
+            "utilisation": 0.004,
+            "memory_used_mib": 142,
+            "memory_total_mib": 40960,
+            "temperature_c": 34,
+            "power_w": 56,
+            "user": "dave"
+          },
+          {
+            "index": 3,
+            "state": "busy",
+            "utilisation": 0.829,
+            "memory_used_mib": 30561,
+            "memory_total_mib": 40960,
+            "temperature_c": 68,
+            "power_w": 250,
+            "user": "ivan"
+          }
+        ]
+      },
+      {
+        "name": "gpu-008",
+        "type": "a100",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "busy",
+            "utilisation": 0.86,
+            "memory_used_mib": 31709,
+            "memory_total_mib": 40960,
+            "temperature_c": 69,
+            "power_w": 257,
+            "user": "erin"
+          },
+          {
+            "index": 1,
+            "state": "busy",
+            "utilisation": 0.831,
+            "memory_used_mib": 30645,
+            "memory_total_mib": 40960,
+            "temperature_c": 68,
+            "power_w": 250,
+            "user": "erin"
+          },
+          {
+            "index": 2,
+            "state": "busy",
+            "utilisation": 0.812,
+            "memory_used_mib": 29930,
+            "memory_total_mib": 40960,
+            "temperature_c": 67,
+            "power_w": 246,
+            "user": "erin"
+          },
+          {
+            "index": 3,
+            "state": "busy",
+            "utilisation": 0.742,
+            "memory_used_mib": 27355,
+            "memory_total_mib": 40960,
+            "temperature_c": 64,
+            "power_w": 229,
+            "user": "erin"
+          }
+        ]
+      },
+      {
+        "name": "gpu-001",
+        "type": "a40",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "busy",
+            "utilisation": 0.739,
+            "memory_used_mib": 30644,
+            "memory_total_mib": 46068,
+            "temperature_c": 64,
+            "power_w": 229,
+            "user": "alice"
+          },
+          {
+            "index": 1,
+            "state": "idle_allocated",
+            "utilisation": 0.008,
+            "memory_used_mib": 330,
+            "memory_total_mib": 46068,
+            "temperature_c": 34,
+            "power_w": 57,
+            "user": "frank"
+          }
+        ]
+      },
+      {
+        "name": "gpu-002",
+        "type": "a40",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "idle_allocated",
+            "utilisation": 0.001,
+            "memory_used_mib": 31,
+            "memory_total_mib": 46068,
+            "temperature_c": 34,
+            "power_w": 55,
+            "user": "mallory"
+          },
+          {
+            "index": 1,
+            "state": "busy",
+            "utilisation": 0.866,
+            "memory_used_mib": 35928,
+            "memory_total_mib": 46068,
+            "temperature_c": 70,
+            "power_w": 259,
+            "user": "bob"
+          }
+        ]
+      },
+      {
+        "name": "gpu-003",
+        "type": "a40",
+        "state": "allocated",
+        "cards": [
+          {
+            "index": 0,
+            "state": "busy",
+            "utilisation": 0.81,
+            "memory_used_mib": 33569,
+            "memory_total_mib": 46068,
+            "temperature_c": 67,
+            "power_w": 245,
+            "user": "niaj"
+          },
+          {
+            "index": 1,
+            "state": "busy",
+            "utilisation": 0.789,
+            "memory_used_mib": 32706,
+            "memory_total_mib": 46068,
+            "temperature_c": 66,
+            "power_w": 240,
+            "user": "niaj"
+          }
+        ]
+      },
+      {
+        "name": "gpu-004",
+        "type": "a40",
+        "state": "drained",
+        "cards": [
+          {
+            "index": 0,
+            "state": "drained",
+            "utilisation": 0.0,
+            "memory_used_mib": 3,
+            "memory_total_mib": 46068,
+            "temperature_c": 34,
+            "power_w": 55,
+            "user": null
+          },
+          {
+            "index": 1,
+            "state": "drained",
+            "utilisation": 0.0,
+            "memory_used_mib": 3,
+            "memory_total_mib": 46068,
+            "temperature_c": 34,
+            "power_w": 55,
+            "user": null
+          }
+        ]
+      }
+    ],
+    "top_users": [
+      {
+        "user": "erin",
+        "cards": 4
+      },
+      {
+        "user": "niaj",
+        "cards": 4
+      },
+      {
+        "user": "bob",
+        "cards": 3
+      },
+      {
+        "user": "dave",
+        "cards": 3
+      },
+      {
+        "user": "heidi",
+        "cards": 3
+      }
+    ],
+    "history": [
+      {
+        "t": "2026-10-01T12:15:00Z",
+        "allocated_fraction": 0.917,
+        "utilisation": 0.638
+      },
+      {
+        "t": "2026-10-01T12:20:00Z",
+        "allocated_fraction": 0.917,
+        "utilisation": 0.638
+      },
+      {
+        "t": "2026-10-01T12:25:00Z",
+        "allocated_fraction": 0.917,
+        "utilisation": 0.635
+      },
+      {
+        "t": "2026-10-01T12:30:00Z",
+        "allocated_fraction": 0.917,
+        "utilisation": 0.631
+      }
+    ]
+  }
+}

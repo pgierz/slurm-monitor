@@ -1,0 +1,6 @@
+// Base configuration for all targets. Do not put a team identifier here.
+// For device installs, copy Signing.xcconfig.example to Signing.xcconfig
+// (git-ignored) and set DEVELOPMENT_TEAM there.
+DEVELOPMENT_TEAM =
+
+#include? "Signing.xcconfig"

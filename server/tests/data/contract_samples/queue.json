@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "cluster": "synthetic",
+  "generated_at": "2026-10-01T12:32:07Z",
+  "stale": false,
+  "data": {
+    "partition": null,
+    "qos": null,
+    "user": "grace",
+    "running": 455,
+    "pending": 77,
+    "mine": {
+      "running": 6,
+      "pending": 3
+    },
+    "pending_by_reason": [
+      {
+        "reason": "Priority",
+        "count": 30
+      },
+      {
+        "reason": "Resources",
+        "count": 28
+      },
+      {
+        "reason": "QOS limit",
+        "count": 10
+      },
+      {
+        "reason": "Held",
+        "count": 4
+      },
+      {
+        "reason": "Dependency",
+        "count": 3
+      },
+      {
+        "reason": "Other",
+        "count": 2
+      }
+    ],
+    "my_jobs_total": 9,
+    "my_jobs": [
+      {
+        "job_id": 4384493,
+        "name": "cdo_remap_355",
+        "state": "R",
+        "partition": "smp",
+        "resources": "4 cores",
+        "elapsed_seconds": 21470,
+        "time_limit_seconds": 43200,
+        "estimated_start": null,
+        "reason": null
+      },
+      {
+        "job_id": 4082060,
+        "name": "spawner-jupyterhub",
+        "state": "R",
+        "partition": "smp",
+        "resources": "4 cores",
+        "elapsed_seconds": 18007,
+        "time_limit_seconds": 28800,
+        "estimated_start": null,
+        "reason": null
+      },
+      {
+        "job_id": 4083046,
+        "name": "spawner-jupyterhub",
+        "state": "R",
+        "partition": "smp",
+        "resources": "4 cores",
+        "elapsed_seconds": 16082,
+        "time_limit_seconds": 28800,
+        "estimated_start": null,
+        "reason": null
+      },
+      {
+        "job_id": 4051200,
+        "name": "postproc_062",
+        "state": "R",
+        "partition": "smp",
+        "resources": "1 core",
+        "elapsed_seconds": 11324,
+        "time_limit_seconds": 21600,
+        "estimated_start": null,
+        "reason": null
+      },
+      {
+        "job_id": 4026343,
+        "name": "tar_archive_205",
+        "state": "R",
+        "partition": "smp",
+        "resources": "64 cores",
+        "elapsed_seconds": 234,
+        "time_limit_seconds": 1800,
+        "estimated_start": null,
+        "reason": null
+      },
+      {
+        "job_id": 4074160,
+        "name": "cdo_remap_022",
+        "state": "R",
+        "partition": "smp",
+        "resources": "16 cores",
+        "elapsed_seconds": 110,
+        "time_limit_seconds": 900,
+        "estimated_start": null,
+        "reason": null
+      },
+      {
+        "job_id": 4287110,
+        "name": "echam_run042",
+        "state": "PD",
+        "partition": "mpp",
+        "resources": "2 nodes",
+        "elapsed_seconds": 0,
+        "time_limit_seconds": 43200,
+        "estimated_start": "2026-10-01T14:13:00Z",
+        "reason": "Resources"
+      },
+      {
+        "job_id": 4323550,
+        "name": "train_17",
+        "state": "PD",
+        "partition": "gpu",
+        "resources": "2 A100",
+        "elapsed_seconds": 0,
+        "time_limit_seconds": 43200,
+        "estimated_start": "2026-10-01T14:23:00Z",
+        "reason": "Priority"
+      },
+      {
+        "job_id": 4154124,
+        "name": "oifs_run056",
+        "state": "PD",
+        "partition": "mpp",
+        "resources": "128 cores",
+        "elapsed_seconds": 0,
+        "time_limit_seconds": 43200,
+        "estimated_start": "2026-10-01T14:41:00Z",
+        "reason": "Priority"
+      }
+    ],
+    "history": [
+      {
+        "t": "2026-10-01T12:15:00Z",
+        "running": 456,
+        "pending": 75
+      },
+      {
+        "t": "2026-10-01T12:20:00Z",
+        "running": 458,
+        "pending": 76
+      },
+      {
+        "t": "2026-10-01T12:25:00Z",
+        "running": 466,
+        "pending": 69
+      },
+      {
+        "t": "2026-10-01T12:30:00Z",
+        "running": 455,
+        "pending": 77
+      }
+    ]
+  }
+}

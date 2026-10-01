@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "cluster": "synthetic",
+  "generated_at": "2026-10-01T12:32:07Z",
+  "stale": false,
+  "data": {
+    "ci": {
+      "runners_alive": 4,
+      "jobs_waiting": 7,
+      "oldest_wait_seconds": 1758
+    },
+    "dask": {
+      "clusters": [
+        {
+          "id": "a3f1",
+          "owner": "alice",
+          "scheduler_alive": true,
+          "workers_running": 14,
+          "workers_requested": 16,
+          "walltime_left_seconds": 684
+        },
+        {
+          "id": "b7c2",
+          "owner": "bob",
+          "scheduler_alive": true,
+          "workers_running": 8,
+          "workers_requested": 8,
+          "walltime_left_seconds": 2083
+        },
+        {
+          "id": "carol",
+          "owner": "carol",
+          "scheduler_alive": false,
+          "workers_running": 0,
+          "workers_requested": 4,
+          "walltime_left_seconds": null
+        }
+      ]
+    },
+    "jupyterhub": {
+      "sessions": 23,
+      "with_gpu": 4,
+      "near_walltime": 0
+    },
+    "extra": [
+      {
+        "key": "matlab",
+        "label": "MATLAB",
+        "running": 3,
+        "pending": 0
+      }
+    ]
+  }
+}

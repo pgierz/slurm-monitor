@@ -15,7 +15,10 @@ removed field requires a new `schema_version`.
   (`2026-10-01T12:32:07Z`). All durations are integer seconds.
 - All field names are `snake_case`. `null` means "not known / not applicable".
 - Errors: `401 {"error": "unauthorized"}`, `403 {"error": "forbidden"}`,
-  `503 {"error": "no_data"}` (the server has not yet completed a first poll).
+  `503 {"error": "no_data"}` (the server has not yet completed a first poll),
+  `503 {"error": "auth_unavailable"}` (the identity provider could not be
+  reached to check an OIDC token; the client treats this as unreachable, not
+  as a rejected sign-in).
 
 ### What the client makes of failures
 
@@ -74,7 +77,8 @@ from an older one.
 {"methods": ["token", "oidc"],
  "oidc": {"issuer": "https://login.helmholtz.de/oauth2",
           "client_id": "slurm-monitor-app",
-          "scopes": ["openid", "profile", "email", "eduperson_entitlement"]}}
+          "scopes": ["openid", "profile", "email", "eduperson_entitlement",
+                     "offline_access"]}}
 ```
 
 `oidc` is `null` when OIDC is not enabled. The app uses the authorization code
@@ -217,6 +221,8 @@ token).
   `history[].utilisation` is `null`.
 - `type` is the lower-case GRES type; `label` its display name.
 - Nodes are sorted by type (largest total first), then by name.
+- `longest_wait_seconds` is `0` when no GPU job is pending.
+- `temperature_c` and `power_w` may be fractional.
 - `top_users`: at most 5, sorted by cards, descending.
 - `history`: at most 72 points, one per 5 minutes, oldest first.
   `utilisation` is the mean over allocated cards.

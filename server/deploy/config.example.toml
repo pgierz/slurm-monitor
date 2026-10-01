@@ -1,0 +1,121 @@
+# Slurm Monitor server: example configuration.
+#
+# Point the server at this file with SLURM_MONITOR_CONFIG=/etc/slurm-monitor/config.toml.
+# Every setting can also be given in the environment as
+# SLURM_MONITOR_<SECTION>__<KEY>, for example SLURM_MONITOR_SLURM__TOKEN; the
+# environment wins over the file. Keep secrets out of this file where you can.
+# Values shown are the defaults unless marked "example".
+
+# Name reported to the app in every answer.
+cluster = "example"                             # example; default "cluster"
+
+[listen]
+host = "127.0.0.1"
+port = 8080
+
+[slurm]
+base_url = "https://slurm.example.org:6820"     # example; default "http://localhost:6820"
+# Version of the slurmrestd OpenAPI plugin, as in the URL /slurm/<version>/jobs.
+api_version = "v0.0.40"
+# Version of the slurmdb plugin (/slurmdb/<version>/qos); defaults to api_version.
+# db_api_version = "v0.0.40"
+# Slurm user the token belongs to (sent as X-SLURM-USER-NAME).
+user_name = "slurm-monitor"                     # example; default ""
+# The Slurm JWT (sent as X-SLURM-USER-TOKEN). Use exactly one of the three:
+#   token          the token itself; better given as SLURM_MONITOR_SLURM__TOKEN
+#   token_file     a file holding the token, read anew on every poll, so that
+#                  a cron job may rotate it
+#   token_command  a command printing the token ("SLURM_JWT=..." is understood)
+# token = "..."
+token_file = "/run/slurm-monitor/slurm.jwt"     # example; default unset
+# token_command = "scontrol token lifespan=7200"
+# How long a token from token_command is reused before the command runs again.
+token_command_ttl_seconds = 1800
+timeout_seconds = 30.0
+# CA bundle for slurmrestd behind TLS with a private CA; default: system store.
+# ca_file = "/etc/ssl/certs/institute-ca.pem"
+
+[poll]
+interval_seconds = 60
+# Length of the history kept in memory. The contract allows at most 72 points
+# of five minutes (6 hours); a shorter window may be set.
+history_window_seconds = 21600
+
+[runners]
+# Regular expressions on the job name.
+ci_pattern = '^ci-\d+'
+dask_pattern = '^dask-gateway'
+# Among Dask jobs, the scheduler is the one whose name or command matches this.
+dask_scheduler_pattern = 'scheduler'
+# Job field naming the Dask cluster a job belongs to; jobs with an empty value
+# are grouped by their owner.
+dask_cluster_field = "comment"
+jupyterhub_pattern = '^(spawner-)?jupyterhub'
+
+# Further kinds for the "extra" list; repeat the block as needed. Default: none.
+[[runners.extra]]
+key = "matlab"
+label = "MATLAB"
+pattern = '^matlab'
+
+[gpu]
+# GRES name that denotes GPUs.
+gres_name = "gpu"
+
+# Display labels by lower-case GRES type. Types not listed are upper-cased.
+[gpu.labels]
+a100 = "A100"                                   # example; default: no labels
+a40 = "A40"
+
+[gpu.metrics]
+# "none":       Slurm allocation only; the app shows no utilisation.
+# "prometheus": DCGM exporter metrics through a Prometheus HTTP API.
+# "collector":  the small collector from server/tools on every GPU node.
+source = "none"
+timeout_seconds = 5.0
+# --- source = "prometheus" ---
+# prometheus_url = "https://prometheus.example.org"
+# Label carrying the node name; ":port" and a domain are stripped when matching.
+prometheus_node_label = "Hostname"
+# Label carrying the card index.
+prometheus_gpu_label = "gpu"
+# Extra label matchers for every query, e.g. 'cluster="example"'.
+prometheus_extra_matchers = ""
+# --- source = "collector" ---
+# Polled as {collector_scheme}://{node}:{collector_port}/metrics.json
+collector_port = 9455
+collector_scheme = "http"
+
+[auth.static]
+# One or more shared bearer tokens. Better given in the environment:
+# SLURM_MONITOR_AUTH__STATIC__TOKENS='["..."]'
+enabled = false
+tokens = []
+
+[auth.oidc]
+enabled = false
+# issuer = "https://login.example.org/oauth2"
+# The public client the app signs in with (authorization code flow with PKCE).
+# client_id = "slurm-monitor-app"
+scopes = ["openid", "profile", "email", "eduperson_entitlement"]
+# When set, JWT access tokens must carry this audience. Opaque tokens cannot
+# be checked for an audience.
+# audience = "slurm-monitor-app"
+# Claim giving the Slurm user name.
+username_claim = "preferred_username"
+# When not empty, the identity must hold at least one of these values in its
+# eduperson_entitlement or groups claim; otherwise the answer is 403.
+required_entitlements = []
+jwks_cache_seconds = 3600
+userinfo_cache_seconds = 300
+timeout_seconds = 10.0
+
+# Explicit mapping to Slurm user names, for people whose claim differs. Keys
+# are the token subject or the value of username_claim. Default: empty.
+[auth.oidc.username_map]
+# "subject-or-claim-value" = "slurmuser"
+
+[metrics]
+# Serve /metrics (Prometheus text format, a handful of gauges, no
+# authentication).
+enabled = false

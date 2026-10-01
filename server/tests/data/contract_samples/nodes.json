@@ -1,0 +1,1023 @@
+{
+  "schema_version": 1,
+  "cluster": "synthetic",
+  "generated_at": "2026-10-01T12:32:07Z",
+  "stale": false,
+  "data": {
+    "total": 240,
+    "allocated": 203,
+    "idle": 23,
+    "drained": 10,
+    "down": 4,
+    "partitions": [
+      {
+        "name": "mpp",
+        "total": 170,
+        "allocated": 160,
+        "idle": 0,
+        "drained": 7,
+        "down": 3,
+        "nodes": [
+          {
+            "name": "prod-001",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-002",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-003",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-004",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-005",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-006",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-007",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-008",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-009",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-010",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-011",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-012",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-013",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-014",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-015",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-016",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-017",
+            "state": "down"
+          },
+          {
+            "name": "prod-018",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-019",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-020",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-021",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-022",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-023",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-024",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-025",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-026",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-027",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-028",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-029",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-030",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-031",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-032",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-033",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-034",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-035",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-036",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-037",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-038",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-039",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-040",
+            "state": "drained"
+          },
+          {
+            "name": "prod-041",
+            "state": "drained"
+          },
+          {
+            "name": "prod-042",
+            "state": "drained"
+          },
+          {
+            "name": "prod-043",
+            "state": "drained"
+          },
+          {
+            "name": "prod-044",
+            "state": "drained"
+          },
+          {
+            "name": "prod-045",
+            "state": "drained"
+          },
+          {
+            "name": "prod-046",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-047",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-048",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-049",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-050",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-051",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-052",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-053",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-054",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-055",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-056",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-057",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-058",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-059",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-060",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-061",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-062",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-063",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-064",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-065",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-066",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-067",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-068",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-069",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-070",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-071",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-072",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-073",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-074",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-075",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-076",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-077",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-078",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-079",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-080",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-081",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-082",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-083",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-084",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-085",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-086",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-087",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-088",
+            "state": "down"
+          },
+          {
+            "name": "prod-089",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-090",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-091",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-092",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-093",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-094",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-095",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-096",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-097",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-098",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-099",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-100",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-101",
+            "state": "down"
+          },
+          {
+            "name": "prod-102",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-103",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-104",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-105",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-106",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-107",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-108",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-109",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-110",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-111",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-112",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-113",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-114",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-115",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-116",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-117",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-118",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-119",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-120",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-121",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-122",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-123",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-124",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-125",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-126",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-127",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-128",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-129",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-130",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-131",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-132",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-133",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-134",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-135",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-136",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-137",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-138",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-139",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-140",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-141",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-142",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-143",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-144",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-145",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-146",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-147",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-148",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-149",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-150",
+            "state": "drained"
+          },
+          {
+            "name": "prod-151",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-152",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-153",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-154",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-155",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-156",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-157",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-158",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-159",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-160",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-161",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-162",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-163",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-164",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-165",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-166",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-167",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-168",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-169",
+            "state": "allocated"
+          },
+          {
+            "name": "prod-170",
+            "state": "allocated"
+          }
+        ]
+      },
+      {
+        "name": "smp",
+        "total": 54,
+        "allocated": 29,
+        "idle": 23,
+        "drained": 2,
+        "down": 0,
+        "nodes": [
+          {
+            "name": "fat-001",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-002",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-001",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-002",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-003",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-004",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-005",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-006",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-007",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-008",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-009",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-010",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-011",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-012",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-013",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-014",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-015",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-016",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-017",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-018",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-019",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-020",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-021",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-022",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-023",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-024",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-025",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-026",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-027",
+            "state": "allocated"
+          },
+          {
+            "name": "smp-028",
+            "state": "idle"
+          },
+          {
+            "name": "smp-029",
+            "state": "idle"
+          },
+          {
+            "name": "smp-030",
+            "state": "idle"
+          },
+          {
+            "name": "smp-031",
+            "state": "idle"
+          },
+          {
+            "name": "smp-032",
+            "state": "idle"
+          },
+          {
+            "name": "smp-033",
+            "state": "idle"
+          },
+          {
+            "name": "smp-034",
+            "state": "idle"
+          },
+          {
+            "name": "smp-035",
+            "state": "idle"
+          },
+          {
+            "name": "smp-036",
+            "state": "idle"
+          },
+          {
+            "name": "smp-037",
+            "state": "idle"
+          },
+          {
+            "name": "smp-038",
+            "state": "idle"
+          },
+          {
+            "name": "smp-039",
+            "state": "idle"
+          },
+          {
+            "name": "smp-040",
+            "state": "idle"
+          },
+          {
+            "name": "smp-041",
+            "state": "idle"
+          },
+          {
+            "name": "smp-042",
+            "state": "idle"
+          },
+          {
+            "name": "smp-043",
+            "state": "idle"
+          },
+          {
+            "name": "smp-044",
+            "state": "idle"
+          },
+          {
+            "name": "smp-045",
+            "state": "idle"
+          },
+          {
+            "name": "smp-046",
+            "state": "idle"
+          },
+          {
+            "name": "smp-047",
+            "state": "idle"
+          },
+          {
+            "name": "smp-048",
+            "state": "idle"
+          },
+          {
+            "name": "smp-049",
+            "state": "idle"
+          },
+          {
+            "name": "smp-050",
+            "state": "drained"
+          },
+          {
+            "name": "smp-051",
+            "state": "drained"
+          },
+          {
+            "name": "smp-052",
+            "state": "idle"
+          }
+        ]
+      },
+      {
+        "name": "fat",
+        "total": 10,
+        "allocated": 9,
+        "idle": 0,
+        "drained": 0,
+        "down": 1,
+        "nodes": [
+          {
+            "name": "fat-001",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-002",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-003",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-004",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-005",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-006",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-007",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-008",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-009",
+            "state": "allocated"
+          },
+          {
+            "name": "fat-010",
+            "state": "down"
+          }
+        ]
+      },
+      {
+        "name": "gpu",
+        "total": 8,
+        "allocated": 7,
+        "idle": 0,
+        "drained": 1,
+        "down": 0,
+        "nodes": [
+          {
+            "name": "gpu-001",
+            "state": "allocated"
+          },
+          {
+            "name": "gpu-002",
+            "state": "allocated"
+          },
+          {
+            "name": "gpu-003",
+            "state": "allocated"
+          },
+          {
+            "name": "gpu-004",
+            "state": "drained"
+          },
+          {
+            "name": "gpu-005",
+            "state": "allocated"
+          },
+          {
+            "name": "gpu-006",
+            "state": "allocated"
+          },
+          {
+            "name": "gpu-007",
+            "state": "allocated"
+          },
+          {
+            "name": "gpu-008",
+            "state": "allocated"
+          }
+        ]
+      }
+    ]
+  }
+}

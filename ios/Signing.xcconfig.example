@@ -1,0 +1,5 @@
+// Copy to Signing.xcconfig (git-ignored) and fill in your team identifier,
+// then run `xcodegen` again. A free personal team is enough for installing
+// on your own device. Find the identifier in Xcode > Settings > Accounts,
+// or in the Apple developer portal under Membership details.
+DEVELOPMENT_TEAM = ABCDE12345
