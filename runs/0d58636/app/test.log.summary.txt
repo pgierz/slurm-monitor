@@ -1,0 +1,76 @@
+===== test.log: matching lines =====
+27:2026-10-01 13:30:19.483043+0000 SlurmMonitor[8344:30656] fopen failed for data file: errno = 2 (No such file or directory)
+29:2026-10-01 13:30:19.987855+0000 SlurmMonitor[8344:30656] fopen failed for data file: errno = 2 (No such file or directory)
+32:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLargeLive]' passed (1.088 seconds).
+35:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumLive]' passed (0.077 seconds).
+38:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumStale]' passed (0.024 seconds).
+41:Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmallLive]' passed (0.480 seconds).
+44:Test Case '-[ScreenshotTests.QueueSnapshotTests testSignInNeededSmall]' passed (0.052 seconds).
+47:Test Case '-[ScreenshotTests.QueueSnapshotTests testVpnNeededSmall]' passed (0.222 seconds).
+48:Test Suite 'QueueSnapshotTests' passed at 2026-10-01 13:30:21.276.
+49:	 Executed 6 tests, with 0 failures (0 unexpected) in 1.943 (1.945) seconds
+50:Test Suite 'ScreenshotTests.xctest' passed at 2026-10-01 13:30:21.276.
+51:	 Executed 6 tests, with 0 failures (0 unexpected) in 1.943 (1.945) seconds
+52:Test Suite 'All tests' passed at 2026-10-01 13:30:21.276.
+53:	 Executed 6 tests, with 0 failures (0 unexpected) in 1.943 (1.946) seconds
+===== test.log: last 60 lines =====
+Build settings from command line:
+    CODE_SIGN_IDENTITY = -
+    DEVELOPMENT_TEAM = 
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  SlurmKit: /Users/runner/work/slurm-monitor/slurm-monitor/ios/SlurmKit
+
+Writing result bundle at path:
+	/Users/runner/work/slurm-monitor/slurm-monitor/ios/build/ScreenshotTests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:F0E646EF-4792-4F36-B48B-EC89B3A6B73B, OS:18.5, name:iPhone 16 }
+{ platform:iOS Simulator, arch:x86_64, id:F0E646EF-4792-4F36-B48B-EC89B3A6B73B, OS:18.5, name:iPhone 16 }
+2026-10-01 13:30:12.369834+0000 SlurmMonitor[8344:29553] [library] load_eligibility_plist: Failed to open /Users/runner/Library/Developer/CoreSimulator/Devices/F0E646EF-4792-4F36-B48B-EC89B3A6B73B/data/Containers/Data/Application/FC3F1BAA-26FA-4E36-9BFB-FD7BD7D7118C/private/var/db/eligibilityd/eligibility.plist: No such file or directory(2)
+2026-10-01 13:30:13.107237+0000 SlurmMonitor[8344:30656] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-10-01 13:30:13.472404+0000 SlurmMonitor[8344:30656] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Suite 'All tests' started at 2026-10-01 13:30:19.330.
+Test Suite 'ScreenshotTests.xctest' started at 2026-10-01 13:30:19.331.
+Test Suite 'QueueSnapshotTests' started at 2026-10-01 13:30:19.331.
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLargeLive]' started.
+2026-10-01 13:30:19.483043+0000 SlurmMonitor[8344:30656] fopen failed for data file: errno = 2 (No such file or directory)
+2026-10-01 13:30:19.483280+0000 SlurmMonitor[8344:30656] Errors found! Invalidating cache...
+2026-10-01 13:30:19.987855+0000 SlurmMonitor[8344:30656] fopen failed for data file: errno = 2 (No such file or directory)
+2026-10-01 13:30:19.988058+0000 SlurmMonitor[8344:30656] Errors found! Invalidating cache...
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-large-live.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueLargeLive]' passed (1.088 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-medium-live.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumLive]' passed (0.077 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumStale]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-medium-stale.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueMediumStale]' passed (0.024 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmallLive]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/queue-small-live.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testQueueSmallLive]' passed (0.480 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testSignInNeededSmall]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/state-signin-small.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testSignInNeededSmall]' passed (0.052 seconds).
+Test Case '-[ScreenshotTests.QueueSnapshotTests testVpnNeededSmall]' started.
+WidgetSnapshotter: wrote /Users/runner/work/slurm-monitor/slurm-monitor/ios/build/direct-screenshots/state-vpn-small.png
+Test Case '-[ScreenshotTests.QueueSnapshotTests testVpnNeededSmall]' passed (0.222 seconds).
+Test Suite 'QueueSnapshotTests' passed at 2026-10-01 13:30:21.276.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 1.943 (1.945) seconds
+Test Suite 'ScreenshotTests.xctest' passed at 2026-10-01 13:30:21.276.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 1.943 (1.945) seconds
+Test Suite 'All tests' passed at 2026-10-01 13:30:21.276.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 1.943 (1.946) seconds
+2026-10-01 13:30:40.527 xcodebuild[7142:24485] [MT] IDETestOperationsObserverDebug: 168.976 elapsed -- Testing started completed.
+2026-10-01 13:30:40.528 xcodebuild[7142:24485] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-01 13:30:40.529 xcodebuild[7142:24485] [MT] IDETestOperationsObserverDebug: 168.981 sec, +168.981 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/slurm-monitor/slurm-monitor/ios/build/ScreenshotTests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
