@@ -129,7 +129,13 @@ class OidcSettings(BaseModel):
     issuer: str = ""
     client_id: str = ""
     scopes: list[str] = Field(
-        default_factory=lambda: ["openid", "profile", "email", "eduperson_entitlement", "offline_access"]
+        default_factory=lambda: [
+            "openid",
+            "profile",
+            "email",
+            "eduperson_entitlement",
+            "offline_access",
+        ]
     )
     # Checked against the token's "aud" claim when set.
     audience: str | None = None

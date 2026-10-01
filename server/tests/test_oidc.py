@@ -88,7 +88,8 @@ async def test_auth_config_lists_oidc(issuer):
     assert config == {
         "methods": ["token", "oidc"],
         "oidc": {"issuer": ISSUER, "client_id": CLIENT_ID,
-                 "scopes": ["openid", "profile", "email", "eduperson_entitlement"]},
+                 "scopes": ["openid", "profile", "email", "eduperson_entitlement",
+                           "offline_access"]},
     }  # fmt: skip
 
 

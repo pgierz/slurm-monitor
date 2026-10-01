@@ -97,7 +97,7 @@ enabled = false
 # issuer = "https://login.example.org/oauth2"
 # The public client the app signs in with (authorization code flow with PKCE).
 # client_id = "slurm-monitor-app"
-scopes = ["openid", "profile", "email", "eduperson_entitlement"]
+scopes = ["openid", "profile", "email", "eduperson_entitlement", "offline_access"]
 # When set, JWT access tokens must carry this audience. Opaque tokens cannot
 # be checked for an audience.
 # audience = "slurm-monitor-app"
