@@ -8,10 +8,15 @@ public protocol HTTPTransport: Sendable {
 
 /// `HTTPTransport` on top of `URLSession`.
 public struct URLSessionTransport: HTTPTransport {
+    /// The one session all transports share unless another is given, so
+    /// that clients made in passing reuse its connections.
+    public static let shared: URLSession = URLSessionTransport.makeSession()
+
     public let session: URLSession
 
-    /// Uses the given session, by default one with widget-friendly timeouts.
-    public init(session: URLSession = URLSessionTransport.makeSession()) {
+    /// Uses the given session, by default the shared one with
+    /// widget-friendly timeouts.
+    public init(session: URLSession = URLSessionTransport.shared) {
         self.session = session
     }
 

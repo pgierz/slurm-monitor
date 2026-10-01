@@ -1,0 +1,16 @@
+# Renews the Slurm token of the Slurm Monitor server every half hour.
+#
+#   install -m 0644 slurm-monitor-token.service slurm-monitor-token.timer /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now slurm-monitor-token.timer
+
+[Unit]
+Description=Renew the Slurm token of the Slurm Monitor server
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30min
+AccuracySec=1min
+Unit=slurm-monitor-token.service
+
+[Install]
+WantedBy=timers.target

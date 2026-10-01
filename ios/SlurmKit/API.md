@@ -22,6 +22,23 @@ Conventions:
   is never shown for another server or another user.
 - `OIDCClient.authorizationURL` adds `prompt=consent` when the scopes
   include `offline_access`.
+- `OIDCClient.discover` accepts a discovery document only when its `issuer`
+  equals the configured one (a trailing slash aside); otherwise it throws
+  `.invalidConfiguration`.
+- `OIDCTokens` carry the token endpoint and the client identifier they were
+  issued with, so a refresh is one request. Both are optional; credentials
+  stored without them still load and are refreshed through discovery.
+- Token refresh in `SlurmClient`: on a 401 with OIDC credentials the stored
+  credentials are read again; if they hold another access token, that one is
+  tried, otherwise the client refreshes, stores the new tokens and retries
+  once. Refreshes run one at a time within the process and, through a lock
+  file in the app group container, across the app and the widget extension.
+  A failed token request is `.unauthorized` only for HTTP 400 or 401 of the
+  token endpoint; everything else is `.unreachable`. Tokens that cannot be
+  saved, and a locked keychain (`KeychainError.isInteractionNotAllowed`),
+  give `.credentialStore`.
+- `SlurmKitConstants.appGroup` is read from the main bundle's Info.plist key
+  `SlurmMonitorAppGroup`; without the key (tests) it is `defaultAppGroup`.
 - `GpuCard.temperatureC` and `GpuCard.powerW` are `Double?` (the contract
   shows whole numbers; fractional values decode as well).
 - Sample user names are `alice`, `bob`, `carol`, `dave`, `erin`.
@@ -37,10 +54,10 @@ let content: WidgetContent<QueueData> = await loader.queue(partition: settings.d
 
 switch content {
 case .live(let queue, let generatedAt):
-    // normal layout; header time: Format.clockTime(generatedAt, timeZone: .current)
+    // normal layout; header time: Format.clockTime(generatedAt, timeZone: .autoupdatingCurrent)
     _ = (queue.running, queue.pending, queue.mineLine)
 case .stale(let queue, let generatedAt):
-    // normal layout in stale grey; header: Format.asOf(generatedAt, timeZone: .current)
+    // normal layout in stale grey; header: Format.asOf(generatedAt, timeZone: .autoupdatingCurrent)
     _ = (queue, generatedAt)
 case .vpnNeeded(let last, let generatedAt):
     // "VPN needed"; `last` and `generatedAt` are nil when nothing was ever cached
@@ -53,6 +70,10 @@ case .notConfigured:
 
 // Previews, placeholders, screenshot tests:
 let preview: WidgetContent<GpuData> = .live(SampleData.gpu.data, generatedAt: SampleData.generatedAt)
+
+// Out of time, or the widget gallery: the cache alone, never the network.
+// Answers `.vpnNeeded(last:generatedAt:)` with what is cached, if anything.
+let cached: WidgetContent<QueueData> = await loader.cachedOnly().queue(partition: settings.defaultPartition)
 
 // Tests: inject everything.
 let testLoader = SnapshotLoader(client: myStubFetcher, cache: InMemorySnapshotCache(), now: { SampleData.generatedAt })
@@ -90,14 +111,18 @@ settings.save()
 // Static token instead:  try store.save(.staticToken(token))
 // Sign out:              try store.clear()
 // Refreshing is automatic: on a 401 with OIDC credentials that hold a refresh
-// token, SlurmClient refreshes once, stores the new tokens and retries once.
+// token, SlurmClient refreshes once, stores the new tokens and retries once
+// (see the conventions above for what happens when two refreshes meet).
 ```
 
 ## Constants.swift
 
 ```swift
 public enum SlurmKitConstants
-    public static let appGroup = "group.de.awi.slurm-monitor"
+    public static let appGroupInfoKey = "SlurmMonitorAppGroup"
+    public static let defaultAppGroup = "group.de.awi.slurm-monitor"
+    public static let appGroup: String
+    public static func resolveAppGroup(fromInfoValue value: Any?) -> String
     public static let keychainService = "de.awi.slurm-monitor.credentials"
     public static let oidcRedirectURI = "de.awi.slurm-monitor:/oauth/callback"
     public static let oidcCallbackScheme = "de.awi.slurm-monitor"
@@ -389,7 +414,9 @@ public struct OIDCTokens: Codable, Sendable, Equatable
     public var accessToken: String
     public var refreshToken: String?
     public var expiresAt: Date?
-    public init(accessToken: String, refreshToken: String?, expiresAt: Date?)
+    public var tokenEndpoint: URL?
+    public var clientId: String?
+    public init(accessToken: String, refreshToken: String?, expiresAt: Date?, tokenEndpoint: URL? = nil, clientId: String? = nil)
 
 public enum Credentials: Codable, Sendable, Equatable
     case staticToken(String)
@@ -404,6 +431,7 @@ public protocol CredentialStoring: Sendable
 public struct KeychainError: Error, Sendable, Equatable
     public var status: Int32
     public init(status: Int32)
+    public var isInteractionNotAllowed: Bool
 
 public struct KeychainCredentialStore: CredentialStoring
     public var service: String
@@ -428,8 +456,9 @@ public protocol HTTPTransport: Sendable
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse)
 
 public struct URLSessionTransport: HTTPTransport
+    public static let shared: URLSession
     public let session: URLSession
-    public init(session: URLSession = URLSessionTransport.makeSession())
+    public init(session: URLSession = URLSessionTransport.shared)
     public static func makeSession() -> URLSession
     public func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse)
 ```
@@ -444,6 +473,7 @@ public enum FetchError: Error, Sendable, Equatable
     case noData
     case decoding(String)
     case notConfigured
+    case credentialStore
 
 public enum UserScope: Sendable, Equatable
     case configured
@@ -491,7 +521,8 @@ public struct PKCE: Sendable, Equatable
 public struct OIDCDiscovery: Codable, Sendable, Equatable
     public var authorizationEndpoint: URL
     public var tokenEndpoint: URL
-    public init(authorizationEndpoint: URL, tokenEndpoint: URL)
+    public var issuer: String?
+    public init(authorizationEndpoint: URL, tokenEndpoint: URL, issuer: String? = nil)
 
 public struct OIDCAuthorizationRequest: Sendable, Equatable
     public var url: URL
@@ -513,6 +544,8 @@ public enum OIDCError: Error, Sendable, Equatable
 public struct OIDCClient: Sendable
     public init(transport: any HTTPTransport = URLSessionTransport())
     public static func discoveryURL(issuer: String) -> URL?
+    public static func normalisedIssuer(_ issuer: String) -> String
+    public static func issuerMatches(_ discovery: OIDCDiscovery, configured issuer: String) -> Bool
     public func discover(issuer: String) async throws -> OIDCDiscovery
     public static func authorizationURL(discovery: OIDCDiscovery, config: OIDCConfig, pkce: PKCE, state: String, redirectURI: String = SlurmKitConstants.oidcRedirectURI) -> URL?
     public func prepareAuthorization(config: OIDCConfig) async throws -> OIDCAuthorizationRequest
@@ -520,6 +553,7 @@ public struct OIDCClient: Sendable
     public func completeAuthorization(_ request: OIDCAuthorizationRequest, callbackURL: URL, now: Date = Date()) async throws -> OIDCTokens
     public func exchangeCode(_ code: String, verifier: String, discovery: OIDCDiscovery, clientId: String, redirectURI: String = SlurmKitConstants.oidcRedirectURI, now: Date = Date()) async throws -> OIDCTokens
     public func refresh(refreshToken: String, discovery: OIDCDiscovery, clientId: String, now: Date = Date()) async throws -> OIDCTokens
+    public func refresh(refreshToken: String, tokenEndpoint: URL, clientId: String, now: Date = Date()) async throws -> OIDCTokens
     public static func formEncode(_ fields: [(String, String)]) -> String
 ```
 
@@ -579,6 +613,7 @@ extension WidgetContent: Equatable where T: Equatable
 public struct SnapshotLoader: Sendable
     public init(client: any SlurmFetching, cache: any SnapshotCaching, now: @escaping @Sendable () -> Date = { Date() })
     public static func live() -> SnapshotLoader
+    public func cachedOnly() -> SnapshotLoader
     public func queue(partition: String? = nil, user: UserScope = .configured, qos: String? = nil) async -> WidgetContent<QueueData>
     public func nodes(partition: String? = nil) async -> WidgetContent<NodesData>
     public func qos(user: UserScope = .configured) async -> WidgetContent<QosData>

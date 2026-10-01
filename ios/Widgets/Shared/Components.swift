@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 // Reusable pieces of the widget layouts. Each takes plain values. `dimmed`
 // switches figures and bars to the stale grey; pass the `isStale` flag the
@@ -13,19 +14,27 @@ struct WidgetHeader: View {
     /// True shows the time in amber (stale: "as of 13:05").
     var timeIsStale: Bool = false
     var showsRefresh: Bool = false
+    @Environment(\.reducedColour) private var reduced
+
+    private var timeColour: Color {
+        if timeIsStale {
+            return Theme.figure(Theme.pending, dimmed: false, reduced: reduced)
+        }
+        return Theme.secondary(reduced: reduced)
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
             Text(title.uppercased())
                 .font(Theme.titleFont)
                 .tracking(Theme.titleTracking)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 4)
             Text(time)
                 .font(Theme.timeFont)
-                .foregroundStyle(timeIsStale ? Theme.pending : Theme.secondaryText)
+                .foregroundStyle(timeColour)
                 .lineLimit(1)
                 .fixedSize()
             if showsRefresh {
@@ -60,17 +69,22 @@ struct FigureView: View {
     var colour: Color = Theme.primaryText
     var size: FigureSize = .large
     var dimmed: Bool = false
+    /// The figure belongs to the accent group of the tinted Home Screen;
+    /// set it for the primary figure of a widget.
+    var accent: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.figureLabel) {
             Text(value)
                 .font(Theme.figureFont(size: size.pointSize))
-                .foregroundStyle(Theme.figure(colour, dimmed: dimmed))
+                .foregroundStyle(Theme.figure(colour, dimmed: dimmed, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+                .widgetAccentable(accent)
             Text(label)
                 .font(Theme.labelFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(1)
         }
     }
@@ -79,11 +93,12 @@ struct FigureView: View {
 /// A small label in the secondary colour, for example "Pending, by reason".
 struct SectionLabel: View {
     let text: String
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         Text(text)
             .font(Theme.labelFont)
-            .foregroundStyle(Theme.secondaryText)
+            .foregroundStyle(Theme.secondary(reduced: reduced))
             .lineLimit(1)
     }
 }
@@ -94,14 +109,16 @@ struct ProportionalBar: View {
     var colour: Color = Theme.running
     var height: CGFloat = Theme.Spacing.barHeight
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         GeometryReader { (proxy: GeometryProxy) in
             ZStack(alignment: .leading) {
-                Capsule().fill(Theme.track)
+                Capsule().fill(Theme.trackColour(reduced: reduced))
                 Capsule()
-                    .fill(Theme.figure(colour, dimmed: dimmed))
+                    .fill(Theme.figure(colour, dimmed: dimmed, reduced: reduced))
                     .frame(width: fillWidth(proxy.size.width))
+                    .widgetAccentable()
             }
         }
         .frame(height: height)
@@ -127,6 +144,7 @@ struct LabelledBar: View {
     /// Fixed width of the value column.
     var valueWidth: CGFloat = 28
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
@@ -139,7 +157,7 @@ struct LabelledBar: View {
             ProportionalBar(fraction: fraction, colour: colour, dimmed: dimmed)
             Text(value)
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: dimmed))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: dimmed, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(width: valueWidth, alignment: .trailing)
@@ -152,6 +170,13 @@ struct BarSegment {
     /// Any non-negative weight; the bar normalises by the sum.
     let weight: Double
     let colour: Color
+    /// Opacity of the segment in reduced colour, where hue is lost.
+    var reducedOpacity: Double = 1.0
+    /// Drawn as a thin line in reduced colour, to stand apart from a full
+    /// segment of the same opacity.
+    var hollowWhenReduced: Bool = false
+    /// Belongs to the accent group of the tinted Home Screen.
+    var accent: Bool = false
 }
 
 /// A bar of adjoining segments, for example the four node states.
@@ -160,11 +185,12 @@ struct StackedBar: View {
     let segments: [BarSegment]
     var height: CGFloat = Theme.Spacing.barHeight
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         GeometryReader { (proxy: GeometryProxy) in
             ZStack(alignment: .leading) {
-                Rectangle().fill(Theme.track)
+                Rectangle().fill(Theme.trackColour(reduced: reduced))
                 segmentRow(width: proxy.size.width)
             }
         }
@@ -178,9 +204,17 @@ struct StackedBar: View {
             ForEach(0..<widths.count, id: \.self) { (index: Int) in
                 Rectangle()
                     .fill(segmentColour(index))
-                    .frame(width: widths[index])
+                    .frame(width: widths[index], height: segmentHeight(index))
+                    .widgetAccentable(segments[index].accent)
             }
         }
+    }
+
+    private func segmentHeight(_ index: Int) -> CGFloat {
+        if reduced && segments[index].hollowWhenReduced {
+            return max(1, height / 3)
+        }
+        return height
     }
 
     private func segmentWidths(total: CGFloat) -> [CGFloat] {
@@ -193,6 +227,10 @@ struct StackedBar: View {
     }
 
     private func segmentColour(_ index: Int) -> Color {
+        if reduced {
+            let factor: Double = dimmed ? Theme.reducedStaleFactor : 1.0
+            return Theme.primaryText.opacity(segments[index].reducedOpacity * factor)
+        }
         if !dimmed {
             return segments[index].colour
         }
@@ -204,9 +242,11 @@ struct StackedBar: View {
 
 /// A hairline across the available width.
 struct Hairline: View {
+    @Environment(\.reducedColour) private var reduced
+
     var body: some View {
         Rectangle()
-            .fill(Theme.hairline)
+            .fill(Theme.hairlineColour(reduced: reduced))
             .frame(height: Theme.Spacing.hairlineHeight)
             .frame(maxWidth: .infinity)
     }
@@ -219,6 +259,7 @@ struct FooterRow: View {
     /// Colour of the value; amber for values that need attention.
     var rightColour: Color = Theme.primaryText
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.footerGap) {
@@ -226,12 +267,12 @@ struct FooterRow: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(left)
                     .font(Theme.footerFont)
-                    .foregroundStyle(Theme.secondaryText)
+                    .foregroundStyle(Theme.secondary(reduced: reduced))
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Text(right)
                     .font(Theme.footerValueFont)
-                    .foregroundStyle(Theme.figure(rightColour, dimmed: dimmed))
+                    .foregroundStyle(Theme.figure(rightColour, dimmed: dimmed, reduced: reduced))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -247,30 +288,50 @@ struct LegendItem: View {
     /// Draws the swatch with this outline (for example white for "down" in the node grid).
     var outline: Color? = nil
     var dimmed: Bool = false
+    /// In reduced colour the swatch is drawn in the primary colour at this
+    /// opacity; `colour` and `outline` are then not used.
+    var reducedOpacity: Double = 1.0
+    /// In reduced colour the swatch is an outline without a fill.
+    var hollowWhenReduced: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .center, spacing: 4) {
             swatch
             Text(label)
                 .font(Theme.labelFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(1)
             if let value = value {
                 Text(value)
                     .font(Theme.figureFont(size: 10, weight: .medium))
-                    .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: dimmed))
+                    .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: dimmed, reduced: reduced))
                     .lineLimit(1)
             }
         }
     }
 
+    private var swatchFill: Color {
+        if reduced {
+            return hollowWhenReduced ? Color.clear : Theme.primaryText.opacity(reducedOpacity)
+        }
+        return colour
+    }
+
+    private var swatchOutline: Color {
+        if reduced {
+            return hollowWhenReduced ? Theme.primaryText.opacity(reducedOpacity) : Color.clear
+        }
+        return outline ?? Color.clear
+    }
+
     private var swatch: some View {
         RoundedRectangle(cornerRadius: 2, style: .continuous)
-            .fill(colour)
+            .fill(swatchFill)
             .frame(width: 7, height: 7)
             .overlay(
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .stroke(outline ?? Color.clear, lineWidth: 1)
+                    .stroke(swatchOutline, lineWidth: 1)
             )
     }
 }
@@ -281,16 +342,17 @@ struct StateChip: View {
     let colour: Color
     var width: CGFloat = 26
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         Text(text)
             .font(Theme.figureFont(size: 10, weight: .semibold))
-            .foregroundStyle(Theme.figure(colour, dimmed: dimmed))
+            .foregroundStyle(Theme.figure(colour, dimmed: dimmed, reduced: reduced))
             .lineLimit(1)
             .frame(width: width, height: 18)
             .overlay(
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(Theme.figure(colour, dimmed: dimmed), lineWidth: 1)
+                    .stroke(Theme.figure(colour, dimmed: dimmed, reduced: reduced), lineWidth: 1)
             )
     }
 }

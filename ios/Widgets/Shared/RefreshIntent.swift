@@ -17,11 +17,13 @@ struct RefreshWidgetsIntent: AppIntent {
 
 /// The refresh button of the header row (medium and larger widgets).
 struct RefreshButton: View {
+    @Environment(\.reducedColour) private var reduced
+
     var body: some View {
         Button(intent: RefreshWidgetsIntent()) {
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
         }
         .buttonStyle(.plain)
     }

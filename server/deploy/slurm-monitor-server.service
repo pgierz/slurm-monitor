@@ -3,12 +3,17 @@
 # Expects the package installed into /opt/slurm-monitor/venv, the
 # configuration in /etc/slurm-monitor/config.toml and secrets in
 # /etc/slurm-monitor/environment (mode 0600), for example:
-#   SLURM_MONITOR_AUTH__STATIC__TOKENS=["..."]
+#   SLURM_MONITOR_AUTH__STATIC__TOKENS='["..."]'
+# The single quotes are needed: without them systemd strips the double quotes
+# and the value is no longer a JSON list.
+#
+# The Slurm token is issued by slurm-monitor-token.service, driven by
+# slurm-monitor-token.timer (same directory; see README, "Token rotation").
 
 [Unit]
 Description=Slurm Monitor server (middle server between slurmrestd and the widgets)
-After=network-online.target
-Wants=network-online.target
+After=network-online.target slurm-monitor-token.service
+Wants=network-online.target slurm-monitor-token.service
 
 [Service]
 Type=simple
@@ -19,10 +24,6 @@ EnvironmentFile=-/etc/slurm-monitor/environment
 ExecStart=/opt/slurm-monitor/venv/bin/slurm-monitor-server
 Restart=on-failure
 RestartSec=5
-
-# The rotated Slurm token lives here (see README, "Token rotation").
-RuntimeDirectory=slurm-monitor
-RuntimeDirectoryPreserve=yes
 
 NoNewPrivileges=yes
 ProtectSystem=strict

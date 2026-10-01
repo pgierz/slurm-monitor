@@ -15,7 +15,7 @@ enum QosWidgetLogic {
 /// The screenshot tests construct this directly.
 struct QosFamilyView: View {
     let content: WidgetContent<QosData>
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(

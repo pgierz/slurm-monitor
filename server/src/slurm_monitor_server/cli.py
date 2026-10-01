@@ -8,6 +8,7 @@ import os
 import time
 
 import uvicorn
+from pydantic import ValidationError
 
 from .app import create_app
 from .config import CONFIG_ENV_VARIABLE, ExtraRunnerKind, Settings, load_settings
@@ -50,7 +51,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     if arguments.config:
         os.environ[CONFIG_ENV_VARIABLE] = arguments.config
-    settings = load_settings()
+    try:
+        settings = load_settings()
+    except ValidationError as error:
+        # A misspelt key or a refused combination: say so without a traceback.
+        problems = "\n".join(
+            f"  {'.'.join(str(part) for part in problem['loc']) or 'settings'}: {problem['msg']}"
+            for problem in error.errors()
+        )
+        parser.exit(2, f"slurm-monitor-server: the configuration is not usable:\n{problems}\n")
 
     if arguments.demo:
         settings = demo_settings(settings)

@@ -65,11 +65,15 @@ Replaced with stable pseudonyms, the same one in every file of a run:
 | command, submit line, script | `/scrubbed/command-<hash>`, plus `-scheduler`/`-worker` if the word occurred |
 | e-mail addresses, anywhere | `user001@example.org` or `mail-<hash>@example.org` |
 | `wckey`, `extra`, `mcs_label`, burst buffer, environment | `x-<hash>` |
+| reservation names (`reservation`, `resv_name`, also in lists) | `resv-<hash>`; equal names stay equal |
+| node `reason`, QOS `description` (free text written by administrators) | `c-<hash>`; empty stays empty |
+| `reason_set_by_user` and other user fields | `user001` |
 | `meta.client.source` (host and port of the caller) | `scrubbed` |
 | any other string | scrubbed if it starts with or contains a path; known user names and e-mail addresses inside it are replaced |
 
-Kept: node names, partition names, QOS names and descriptions, GRES and TRES
-strings, states, reasons, features, the cluster name, and **all numbers**.
+Kept: node names, partition names, QOS names, GRES and TRES strings, states,
+job state reasons (`state_reason`, a fixed Slurm word), features, the cluster
+name, and **all numbers**.
 Numbers include job ids, time stamps and the numeric `user_id`/`group_id`.
 If numeric ids are considered personal data at your site, remove them before
 sharing, e.g. `jq 'del(.jobs[].user_id, .jobs[].group_id)' jobs.json`.
@@ -81,8 +85,12 @@ and `{"set": true, "infinite": false, "number": N}` objects).
 
 The script checks its own output and prints either "Self-check: no known user,
 account or group name … left" or a `REVIEW BEFORE SHARING` list of key paths.
-A listed hit is not always a leak: an account that has the same name as a
-partition is reported because partition names are kept on purpose.
+The check is a plain search, ignoring case, for every original user, account
+and group name longer than two characters anywhere inside any string, so a
+name inside a longer word (`pgierz_workshop`) is found too. A listed hit is
+not always a leak: an account that has the same name as a partition is
+reported because partition names are kept on purpose, and a short name may
+turn up inside an unrelated word.
 
 Then look yourself, on the login node:
 
@@ -96,8 +104,9 @@ grep -n -o -E '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+' *.json | grep -v '@example.org'
 python3 -c 'import json;j=json.load(open("jobs.json"))["jobs"];print(sorted({x["name"] for x in j}));print(sorted({x.get("user_name") for x in j}), sorted({x.get("account") for x in j}))'
 ```
 
-All four should show nothing personal. Node reasons are free text written by
-administrators; read them once (`grep -n '"reason"' nodes.json`).
+All four should show nothing personal. Node reasons and QOS descriptions are
+replaced by hashes; `grep -n '"reason"' nodes.json` should show only `c-…`
+values and empty strings.
 
 ## gpu_collector.py
 

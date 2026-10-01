@@ -26,8 +26,9 @@ def test_defaults_without_a_file(monkeypatch):
     monkeypatch.delenv("SLURM_MONITOR_CONFIG", raising=False)
     settings = load_settings()
     assert settings.poll.interval_seconds == 60
-    assert settings.slurm.api_version == "v0.0.40"
-    assert settings.slurm.effective_db_api_version == "v0.0.40"
+    # No fixed version: the server asks the slurmrestd what it offers.
+    assert settings.slurm.api_version is None
+    assert settings.slurm.effective_db_api_version is None
     assert settings.gpu.metrics.source == "none"
     assert settings.metrics.enabled is False
     assert not settings.auth.static.enabled and not settings.auth.oidc.enabled
@@ -144,3 +145,20 @@ def test_command_line_help(capsys):
     with pytest.raises(SystemExit):
         cli.main(["--help"])
     assert "--demo" in capsys.readouterr().out
+
+
+def test_unusable_configuration_ends_with_a_plain_message(monkeypatch, tmp_path, capsys):
+    config = tmp_path / "config.toml"
+    config.write_text(
+        '[slurm]\ntokn = "x"\n'
+        '[auth.oidc]\nenabled = true\nissuer = "https://login.example.org"\nclient_id = "app"\n'
+    )
+    # --config sets the variable; set here first so that it is restored afterwards.
+    monkeypatch.setenv("SLURM_MONITOR_CONFIG", str(config))
+    with pytest.raises(SystemExit) as stopped:
+        cli.main(["--config", str(config)])
+    assert stopped.value.code == 2
+    message = capsys.readouterr().err
+    assert "slurm.tokn: Extra inputs are not permitted" in message
+    assert "auth.oidc" in message and "allow_any_authenticated = true" in message
+    assert "Traceback" not in message

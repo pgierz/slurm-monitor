@@ -28,7 +28,14 @@ struct LockScreenProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (LockScreenEntry) -> Void) {
-        completion(LockScreenEntry.sample())
+        if context.isPreview {
+            completion(LockScreenEntry.sample())
+            return
+        }
+        Task {
+            let entry: LockScreenEntry = await LockScreenProvider.cachedEntry()
+            completion(entry)
+        }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<LockScreenEntry>) -> Void) {
@@ -38,17 +45,61 @@ struct LockScreenProvider: TimelineProvider {
         }
     }
 
-    /// One entry; refreshed at the earlier of the two families' times, so
-    /// that "VPN needed" in either is retried soon.
+    /// The entry outside the widget gallery: for each family the cached
+    /// snapshot if there is one, otherwise the sample.
+    static func cachedEntry() async -> LockScreenEntry {
+        let now = Date()
+        let sample: LockScreenEntry = LockScreenEntry.sample()
+        let nodes: WidgetContent<NodesData>? = await FamilyTimeline.cachedContent(now: now) { (loader: SnapshotLoader) in
+            await loader.nodes()
+        }
+        let queue: WidgetContent<QueueData>? = await FamilyTimeline.cachedContent(now: now) { (loader: SnapshotLoader) in
+            await loader.queue()
+        }
+        return LockScreenEntry(date: now, nodes: nodes ?? sample.nodes, queue: queue ?? sample.queue)
+    }
+
+    /// The entries for two contents loaded at `now`: the one for now and
+    /// one at each moment at which either turns stale.
+    static func entries(nodes: WidgetContent<NodesData>, queue: WidgetContent<QueueData>, now: Date) -> [LockScreenEntry] {
+        var dates: [Date] = [now]
+        let staleDates: [Date?] = [
+            FamilyTimeline.staleDate(for: nodes, after: now),
+            FamilyTimeline.staleDate(for: queue, after: now),
+        ]
+        for candidate in staleDates {
+            if let date = candidate, !dates.contains(date) {
+                dates.append(date)
+            }
+        }
+        dates.sort()
+        return dates.map { (date: Date) -> LockScreenEntry in
+            LockScreenEntry(
+                date: date,
+                nodes: FamilyTimeline.content(nodes, at: date),
+                queue: FamilyTimeline.content(queue, at: date)
+            )
+        }
+    }
+
+    /// Loads the two families side by side, each within the deadline.
+    /// Refreshed at the earlier of the two families' times, so that
+    /// "VPN needed" in either is retried soon.
     static func loadTimeline() async -> Timeline<LockScreenEntry> {
         let loader = SnapshotLoader.live()
-        let nodes: WidgetContent<NodesData> = await loader.nodes()
-        let queue: WidgetContent<QueueData> = await loader.queue()
+        async let nodesLoad: WidgetContent<NodesData> = FamilyTimeline.load(loader: loader) { (source: SnapshotLoader) in
+            await source.nodes()
+        }
+        async let queueLoad: WidgetContent<QueueData> = FamilyTimeline.load(loader: loader) { (source: SnapshotLoader) in
+            await source.queue()
+        }
+        let nodes: WidgetContent<NodesData> = await nodesLoad
+        let queue: WidgetContent<QueueData> = await queueLoad
         let now = Date()
-        let entry = LockScreenEntry(date: now, nodes: nodes, queue: queue)
+        let entries: [LockScreenEntry] = LockScreenProvider.entries(nodes: nodes, queue: queue, now: now)
         let nodesNext: Date = FamilyTimeline.nextRefresh(after: now, content: nodes)
         let queueNext: Date = FamilyTimeline.nextRefresh(after: now, content: queue)
-        return Timeline(entries: [entry], policy: .after(min(nodesNext, queueNext)))
+        return Timeline(entries: entries, policy: .after(min(nodesNext, queueNext)))
     }
 }
 

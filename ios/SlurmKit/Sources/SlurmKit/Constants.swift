@@ -2,8 +2,29 @@ import Foundation
 
 /// Identifiers shared by the app, the widget extension and this package.
 public enum SlurmKitConstants {
-    /// App group shared by the app and the widget extension.
-    public static let appGroup = "group.de.awi.slurm-monitor"
+    /// Info.plist key under which the app and the widget extension state
+    /// their app group (written from `APP_ID_BASE`, see `ios/README.md`).
+    public static let appGroupInfoKey = "SlurmMonitorAppGroup"
+    /// The app group used when the main bundle does not state one, as in
+    /// `swift test`.
+    public static let defaultAppGroup = "group.de.awi.slurm-monitor"
+    /// App group shared by the app and the widget extension: the value of
+    /// `appGroupInfoKey` in the main bundle, or `defaultAppGroup`.
+    public static let appGroup: String = SlurmKitConstants.resolveAppGroup(
+        fromInfoValue: Bundle.main.object(forInfoDictionaryKey: SlurmKitConstants.appGroupInfoKey)
+    )
+
+    /// The app group for a value read from an Info.plist: the value itself
+    /// when it is a usable identifier, otherwise `defaultAppGroup`.
+    public static func resolveAppGroup(fromInfoValue value: Any?) -> String {
+        guard let text = value as? String else { return defaultAppGroup }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // An unexpanded build setting reads `group.$(APP_ID_BASE)`.
+        if trimmed.isEmpty || trimmed.contains("$") {
+            return defaultAppGroup
+        }
+        return trimmed
+    }
     /// Keychain service name under which credentials are stored.
     public static let keychainService = "de.awi.slurm-monitor.credentials"
     /// Redirect URI of the OIDC authorisation code flow.

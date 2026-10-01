@@ -7,7 +7,7 @@ git.
 
 ```
 project.yml              XcodeGen project definition
-Project.xcconfig         base build configuration (empty team, optional include)
+Project.xcconfig         base build configuration (empty team, APP_ID_BASE, optional include)
 Signing.xcconfig.example template for your own Signing.xcconfig (git-ignored)
 SlurmKit/                Swift package: models, client, cache, state logic
 App/                     app target `SlurmMonitor`
@@ -46,10 +46,38 @@ xcodegen
 `Project.xcconfig` includes `Signing.xcconfig` when it exists, so the team
 never appears in git. Signing is automatic. The app and the widget extension
 use the app group `group.de.awi.slurm-monitor` and a shared keychain group;
-with a personal team Xcode registers both on first build. Should the bundle
-identifier `de.awi.slurm-monitor` already be claimed by another team, override
-`PRODUCT_BUNDLE_IDENTIFIER` in a local build only; do not commit a different
-identifier.
+with a personal team Xcode registers both on first build.
+
+### Identifiers
+
+Every identifier is derived from one build setting, `APP_ID_BASE`, set to
+`de.awi.slurm-monitor` in `Project.xcconfig`:
+
+| Identifier | Value | Where |
+|---|---|---|
+| App bundle identifier | `$(APP_ID_BASE)` | `project.yml` |
+| Widget extension bundle identifier | `$(APP_ID_BASE).widgets` | `project.yml` |
+| Screenshot test bundle identifier | `$(APP_ID_BASE).screenshot-tests` | `project.yml` |
+| App group | `group.$(APP_ID_BASE)` | both entitlements files; both Info.plists under `SlurmMonitorAppGroup` |
+| Keychain access group | `$(AppIdentifierPrefix)$(APP_ID_BASE)` | both entitlements files |
+
+A different team, or an identifier that is already claimed by another team,
+needs one line in the local `Signing.xcconfig` and nothing else:
+
+```
+APP_ID_BASE = org.example.slurm-monitor
+```
+
+Run `xcodegen` again afterwards. Do not commit a different identifier.
+
+`SlurmKit` learns the app group at run time: `SlurmKitConstants.appGroup`
+reads the Info.plist key `SlurmMonitorAppGroup` of the main bundle (the app
+or the widget extension) and falls back to `group.de.awi.slurm-monitor` where
+there is no such key, as in `swift test`.
+
+The URL scheme of the sign-in callback, `de.awi.slurm-monitor`, does not
+follow `APP_ID_BASE`. It is fixed in `docs/contract.md` as part of the
+redirect URI that the identity provider has registered.
 
 ## Convention for widget sources
 
@@ -89,8 +117,11 @@ radius (about 22 pt) and forces the dark colour scheme.
 | Size | Points |
 |---|---|
 | `.small` | 170 × 170 |
+| `.small158` | 158 × 158 (390 pt and 393 pt wide phones) |
+| `.small148` | 148 × 148 (375 pt wide phones) |
 | `.medium` | 364 × 170 |
 | `.large` | 364 × 382 |
+| `.large338x354` | 338 × 354 (390 pt and 393 pt wide phones) |
 | `.extraLarge` (iPad) | 715 × 354 |
 | `.accessoryCircular` | 76 × 76 |
 | `.accessoryRectangular` | 172 × 76 |
@@ -135,7 +166,20 @@ PNGs are published as the artifact `widget-screenshots`, the raw `xcodebuild`
 logs as `xcodebuild-logs`, and the result bundle as `xcresult` when a step
 fails.
 
+The tinted Home Screen and StandBy at night draw a widget without its own
+colours. The widgets then switch to a reduced style (see
+`Widgets/README.md`); a test shows it by setting the flag from outside:
+
+```swift
+let view = NodesFamilyView(content: live, size: .extraLarge, timeZone: timeZone)
+    .environment(\.reducedColour, true)
+WidgetSnapshotter.snapshot(view, size: .extraLarge, named: "nodes-xlarge-accented", in: self)
+```
+
 Limits of the harness: `ImageRenderer` draws SwiftUI only, so views backed by
-UIKit do not appear, and the Lock Screen accessory rendering (vibrant,
-monochrome) is not imitated; accessory snapshots show layout, not the final
-tint.
+UIKit do not appear, and the system's own part of a rendering mode is not
+imitated: neither the vibrant, monochrome Lock Screen accessories nor the
+tint and the removed background of the tinted Home Screen. Accessory
+snapshots show layout, not the final tint; the `-accented` snapshots show the
+reduced style on the usual dark background, in white where the system would
+put its tint.

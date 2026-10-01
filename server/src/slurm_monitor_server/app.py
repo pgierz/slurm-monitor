@@ -8,8 +8,10 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import Depends, FastAPI, Header, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import SCHEMA_VERSION, __version__
 from .aggregators import (
@@ -36,6 +38,15 @@ class ApiError(Exception):
         self.status_code = status_code
         self.error = error
 
+
+# Error codes for failures the framework itself answers (unknown path, wrong
+# method, parameters that do not validate).
+HTTP_ERROR_CODES = {
+    400: "invalid_request",
+    404: "not_found",
+    405: "method_not_allowed",
+    422: "invalid_request",
+}
 
 # The value of the 'user' parameter that means "no particular user".
 EVERYONE = "*"
@@ -100,6 +111,24 @@ def create_app(
         headers = {"WWW-Authenticate": "Bearer"} if error.status_code == 401 else None
         return JSONResponse({"error": error.error}, status_code=error.status_code, headers=headers)
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(
+        request: Request, error: RequestValidationError
+    ) -> JSONResponse:
+        return JSONResponse({"error": "invalid_request"}, status_code=422)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error_handler(request: Request, error: StarletteHTTPException) -> JSONResponse:
+        code = HTTP_ERROR_CODES.get(error.status_code, "error")
+        return JSONResponse(
+            {"error": code}, status_code=error.status_code, headers=error.headers or None
+        )
+
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, error: Exception) -> JSONResponse:
+        logger.error("unhandled error on %s", request.url.path, exc_info=error)
+        return JSONResponse({"error": "internal_error"}, status_code=500)
+
     async def identity(authorization: Annotated[str | None, Header()] = None) -> Identity:
         try:
             return await authenticator.authenticate(authorization)
@@ -149,6 +178,7 @@ def create_app(
             if store.last_poll_at is not None
             else None,
             last_poll_ok=store.last_poll_ok,
+            slurm_api_version=getattr(slurm_source, "api_version", None),
         ).model_dump(mode="json")
 
     @app.get("/api/v1/auth/config")

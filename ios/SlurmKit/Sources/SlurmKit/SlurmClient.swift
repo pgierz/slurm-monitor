@@ -14,6 +14,10 @@ public enum FetchError: Error, Sendable, Equatable {
     case decoding(String)
     /// No server URL is set.
     case notConfigured
+    /// The credential store could not be used: the keychain is locked (the
+    /// device has not been unlocked since it started), or refreshed tokens
+    /// could not be saved. Says nothing about whether the sign-in is valid.
+    case credentialStore
 }
 
 /// Whose jobs count as "mine" in a fetch: the `user` query parameter.
@@ -71,6 +75,12 @@ public protocol SlurmFetching: Sendable {
 }
 
 /// Client of the middle server. All methods throw `FetchError`.
+///
+/// When an OIDC access token is refused with a 401, the client first looks
+/// whether newer tokens have been stored meanwhile and retries with those;
+/// otherwise it refreshes once, stores the new tokens and retries once.
+/// Refreshes run one at a time, within the process and, through a lock file
+/// in the app group container, across the app and the widget extension.
 ///
 /// The `user` of a call is a `UserScope`; the default, `.configured`, sends
 /// the username from the settings, if one is set. Partitions are sent only
@@ -168,29 +178,67 @@ public struct SlurmClient: SlurmFetching {
 
     // MARK: Internals
 
+    /// Where the lock file of the token refresh lies; `nil` for none. A
+    /// property, so that tests can keep clear of the app group container.
+    var refreshLockFile: @Sendable () -> URL? = { RefreshFileLock.defaultURL() }
+
     private func get<R: Decodable>(_ path: String, query: [(String, String?)], authenticated: Bool) async throws -> R {
         guard settings.serverURL != nil else {
             throw FetchError.notConfigured
         }
-        var stored: Credentials?
-        if authenticated {
-            let loaded = try? credentials.load()
-            guard let found = loaded else {
-                throw FetchError.noCredentials
-            }
-            stored = found
+        guard authenticated else {
+            let request = try makeRequest(path: path, query: query, bearerToken: nil)
+            let (data, status) = try await send(request)
+            return try interpret(data, status: status)
         }
-        let request = try makeRequest(path: path, query: query, bearerToken: stored?.bearerToken)
-        let (data, status) = try await send(request)
 
-        if status == 401, let current = stored, case .oidc(let tokens) = current, let refreshToken = tokens.refreshToken {
-            let renewed = try await refreshTokens(refreshToken)
-            try? credentials.save(.oidc(renewed))
-            let retry = try makeRequest(path: path, query: query, bearerToken: renewed.accessToken)
-            let (retryData, retryStatus) = try await send(retry)
-            return try interpret(retryData, status: retryStatus)
+        let stored: Credentials = try loadCredentials()
+        let request = try makeRequest(path: path, query: query, bearerToken: stored.bearerToken)
+        let (data, status) = try await send(request)
+        guard status == 401, case .oidc(let refused) = stored else {
+            return try interpret(data, status: status)
         }
-        return try interpret(data, status: status)
+
+        // The access token was refused. Another task or the other process
+        // may have renewed it already; otherwise it is renewed here.
+        guard let token = try await accessTokenAfterRefusal(of: refused) else {
+            return try interpret(data, status: status)
+        }
+        let retry = try makeRequest(path: path, query: query, bearerToken: token)
+        let (retryData, retryStatus) = try await send(retry)
+        return try interpret(retryData, status: retryStatus)
+    }
+
+    /// The stored credentials. A locked keychain is `.credentialStore`, not
+    /// `.noCredentials`: the sign-in is most likely there and only cannot be
+    /// read before the first unlock.
+    private func loadCredentials() throws -> Credentials {
+        let loaded: Credentials?
+        do {
+            loaded = try credentials.load()
+        } catch let error as KeychainError where error.isInteractionNotAllowed {
+            throw FetchError.credentialStore
+        } catch {
+            throw FetchError.noCredentials
+        }
+        guard let found = loaded else {
+            throw FetchError.noCredentials
+        }
+        return found
+    }
+
+    /// The stored bearer token, if it can be read and is not the refused one.
+    private func storedToken(otherThan refused: String) -> String? {
+        let loaded: Credentials?
+        do {
+            loaded = try credentials.load()
+        } catch {
+            return nil
+        }
+        guard let found = loaded, found.bearerToken != refused else {
+            return nil
+        }
+        return found.bearerToken
     }
 
     private func send(_ request: URLRequest) async throws -> (Data, Int) {
@@ -223,20 +271,211 @@ public struct SlurmClient: SlurmFetching {
         throw FetchError.unreachable
     }
 
-    /// One refresh: server auth configuration, discovery, token request.
-    private func refreshTokens(_ refreshToken: String) async throws -> OIDCTokens {
+    // MARK: Token refresh
+
+    /// The access token to retry with after `refused` got a 401, or `nil`
+    /// when there is none to try (no refresh token).
+    ///
+    /// Refreshes run one at a time: within the process behind
+    /// `RefreshGate`, across the app and the widget extension behind a lock
+    /// file in the app group container. A refresh token can be used once, so
+    /// two refreshes with the same one would sign the user out.
+    private func accessTokenAfterRefusal(of refused: OIDCTokens) async throws -> String? {
+        guard await RefreshGate.shared.acquire() else {
+            // Cancelled while waiting; nothing was asked of the provider.
+            throw FetchError.unreachable
+        }
+        let fileLock = RefreshFileLock(url: refreshLockFile())
+        await fileLock.lock()
+
+        let outcome: Result<String?, FetchError>
+        do {
+            let token: String? = try await renewUnderLock(refused)
+            outcome = .success(token)
+        } catch let error as FetchError {
+            outcome = .failure(error)
+        } catch {
+            outcome = .failure(.unreachable)
+        }
+
+        fileLock.unlock()
+        await RefreshGate.shared.release()
+        return try outcome.get()
+    }
+
+    /// The body of a refresh; runs with both locks held.
+    private func renewUnderLock(_ refused: OIDCTokens) async throws -> String? {
+        // Whoever held the lock before may have stored new tokens.
+        let current: Credentials = try loadCredentials()
+        if current.bearerToken != refused.accessToken {
+            return current.bearerToken
+        }
+        guard case .oidc(let tokens) = current, let refreshToken = tokens.refreshToken else {
+            return nil
+        }
+
+        let renewed: OIDCTokens
+        do {
+            renewed = try await requestNewTokens(tokens, refreshToken: refreshToken)
+        } catch {
+            // A writer that does not take the lock (a fresh sign-in in the
+            // app) may have replaced the tokens meanwhile.
+            if let other = storedToken(otherThan: refused.accessToken) {
+                return other
+            }
+            throw error
+        }
+
+        do {
+            try credentials.save(.oidc(renewed))
+        } catch {
+            // The old refresh token may be spent and the new one is not
+            // stored: say so instead of carrying on as if all were well.
+            throw FetchError.credentialStore
+        }
+        return renewed.accessToken
+    }
+
+    /// One token request when the tokens carry their endpoint and client
+    /// identifier; otherwise the server's auth configuration and discovery
+    /// first. Throws `FetchError`.
+    private func requestNewTokens(_ tokens: OIDCTokens, refreshToken: String) async throws -> OIDCTokens {
+        let client = OIDCClient(transport: transport)
+        if let endpoint = tokens.tokenEndpoint, let clientId = tokens.clientId, !clientId.isEmpty {
+            do {
+                return try await client.refresh(refreshToken: refreshToken, tokenEndpoint: endpoint, clientId: clientId)
+            } catch {
+                throw SlurmClient.refreshFailure(error)
+            }
+        }
+
         let config = try await authConfig()
         guard let oidc = config.oidc else {
+            // The server no longer offers this kind of sign-in.
             throw FetchError.unauthorized
         }
-        let client = OIDCClient(transport: transport)
+        let discovery: OIDCDiscovery
         do {
-            let discovery = try await client.discover(issuer: oidc.issuer)
-            return try await client.refresh(refreshToken: refreshToken, discovery: discovery, clientId: oidc.clientId)
-        } catch OIDCError.network {
-            throw FetchError.unreachable
+            discovery = try await client.discover(issuer: oidc.issuer)
         } catch {
-            throw FetchError.unauthorized
+            // Discovery says nothing about the refresh token.
+            throw FetchError.unreachable
+        }
+        do {
+            return try await client.refresh(refreshToken: refreshToken, tokenEndpoint: discovery.tokenEndpoint, clientId: oidc.clientId)
+        } catch {
+            throw SlurmClient.refreshFailure(error)
+        }
+    }
+
+    /// What a failed token request means: only a 400 or 401 of the token
+    /// endpoint says that the refresh token is no good. A network failure, a
+    /// 5xx or an unreadable answer is the provider's trouble and leaves the
+    /// sign-in as it is.
+    static func refreshFailure(_ error: Error) -> FetchError {
+        if let oidcError = error as? OIDCError, case .http(let status) = oidcError, status == 400 || status == 401 {
+            return .unauthorized
+        }
+        return .unreachable
+    }
+}
+
+/// Lets one token refresh run at a time within the process.
+actor RefreshGate {
+    static let shared = RefreshGate()
+
+    private var held = false
+
+    private func take() -> Bool {
+        if held {
+            return false
+        }
+        held = true
+        return true
+    }
+
+    /// Waits for the gate. Returns false, without holding it, when the task
+    /// is cancelled while waiting.
+    nonisolated func acquire() async -> Bool {
+        while true {
+            if await take() {
+                return true
+            }
+            if Task.isCancelled {
+                return false
+            }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
+    func release() {
+        held = false
+    }
+}
+
+/// An advisory lock (`flock`) on a file in the app group container, so that
+/// the app and the widget extension do not refresh at the same time.
+///
+/// Taking it never blocks: it is tried for a bounded time, and when the file
+/// cannot be opened (no container, as in unsigned builds and tests) or the
+/// lock does not come free, the caller proceeds without it.
+final class RefreshFileLock {
+    static let fileName = "token-refresh.lock"
+    static let attempts = 60
+    static let pauseNanoseconds: UInt64 = 100_000_000
+
+    private let url: URL?
+    private let attempts: Int
+    private var descriptor: Int32 = -1
+
+    init(url: URL?, attempts: Int = RefreshFileLock.attempts) {
+        self.url = url
+        self.attempts = attempts
+    }
+
+    /// The lock file in the app group container; `nil` without a container.
+    static func defaultURL() -> URL? {
+        let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: SlurmKitConstants.appGroup)
+        return container?.appendingPathComponent(fileName, isDirectory: false)
+    }
+
+    /// True while the lock is held.
+    var isHeld: Bool {
+        descriptor >= 0
+    }
+
+    /// Tries for up to six seconds; gives up at once when the task is cancelled.
+    func lock() async {
+        guard let url = url, descriptor < 0 else { return }
+        let opened: Int32 = open(url.path, O_CREAT | O_RDWR, 0o600)
+        if opened < 0 {
+            return
+        }
+        var attempt = 0
+        while attempt < attempts {
+            if flock(opened, LOCK_EX | LOCK_NB) == 0 {
+                descriptor = opened
+                return
+            }
+            if Task.isCancelled {
+                break
+            }
+            try? await Task.sleep(nanoseconds: RefreshFileLock.pauseNanoseconds)
+            attempt += 1
+        }
+        _ = close(opened)
+    }
+
+    func unlock() {
+        guard descriptor >= 0 else { return }
+        _ = flock(descriptor, LOCK_UN)
+        _ = close(descriptor)
+        descriptor = -1
+    }
+
+    deinit {
+        if descriptor >= 0 {
+            _ = close(descriptor)
         }
     }
 }

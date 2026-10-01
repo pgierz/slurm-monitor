@@ -1,5 +1,6 @@
 import SlurmKit
 import SwiftUI
+import WidgetKit
 
 /// Colours of one card cell, by card state.
 struct GpuCardStyle {
@@ -12,7 +13,49 @@ struct GpuCardStyle {
     /// The memory bar along the bottom.
     let bar: Color
 
-    static func make(for state: CardState, dimmed: Bool) -> GpuCardStyle {
+    /// Reduced colour: no fill at all, so that nothing opaque lies under
+    /// the text, and one colour whose opacity tells the states apart.
+    /// Allocated cards have a full outline; an idle-allocated one a fainter
+    /// outline under full text; free, drained and down cards are faint
+    /// outlines with their state written in them.
+    static func makeReduced(for state: CardState, dimmed: Bool) -> GpuCardStyle {
+        let factor: Double = dimmed ? Theme.reducedStaleFactor : 1.0
+        let outline: Double = reducedOutlineOpacity(for: state)
+        let text: Double = reducedTextOpacity(for: state)
+        let textColour: Color = Theme.primaryText.opacity(text * factor)
+        return GpuCardStyle(
+            fill: Color.clear,
+            outline: Theme.primaryText.opacity(outline * factor),
+            text: textColour,
+            detail: Theme.primaryText.opacity(min(text, 0.7) * factor),
+            bar: Theme.primaryText.opacity(0.5 * factor)
+        )
+    }
+
+    /// Opacity of the cell outline in reduced colour.
+    static func reducedOutlineOpacity(for state: CardState) -> Double {
+        switch state {
+        case .busy, .allocated: return 1.0
+        case .idleAllocated: return 0.5
+        case .free, .unknown: return 0.25
+        case .drained: return 0.25
+        case .down: return 0.5
+        }
+    }
+
+    /// Opacity of the cell text in reduced colour.
+    static func reducedTextOpacity(for state: CardState) -> Double {
+        switch state {
+        case .busy, .allocated, .idleAllocated, .down: return 1.0
+        case .free, .unknown: return 0.5
+        case .drained: return 0.7
+        }
+    }
+
+    static func make(for state: CardState, dimmed: Bool, reduced: Bool = false) -> GpuCardStyle {
+        if reduced {
+            return makeReduced(for: state, dimmed: dimmed)
+        }
         if dimmed {
             let fill: Color = state.isAllocated ? Theme.track : Color.clear
             return GpuCardStyle(fill: fill, outline: Theme.staleFigure, text: Theme.staleFigure, detail: Theme.staleFigure, bar: Theme.staleFigure)
@@ -54,6 +97,7 @@ struct GpuCardCell: View {
     /// True in the extra large layout: memory, temperature and power beside the utilisation.
     var showsDetail: Bool = false
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         label
@@ -67,10 +111,11 @@ struct GpuCardCell: View {
             }
             .clipShape(cellShape)
             .overlay(cellShape.strokeBorder(style.outline, lineWidth: 1))
+            .widgetAccentable(card.state.isAllocated)
     }
 
     private var style: GpuCardStyle {
-        GpuCardStyle.make(for: card.state, dimmed: isStale)
+        GpuCardStyle.make(for: card.state, dimmed: isStale, reduced: reduced)
     }
 
     private var cellShape: RoundedRectangle {

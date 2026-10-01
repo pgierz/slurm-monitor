@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -24,15 +24,24 @@ from pydantic_settings import (
 CONFIG_ENV_VARIABLE = "SLURM_MONITOR_CONFIG"
 
 
-class ListenSettings(BaseModel):
+class SettingsSection(BaseModel):
+    """A section of the configuration; a misspelt key is an error, not ignored."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ListenSettings(SettingsSection):
     host: str = "127.0.0.1"
     port: int = 8080
 
 
-class SlurmSettings(BaseModel):
+class SlurmSettings(SettingsSection):
     base_url: str = "http://localhost:6820"
-    api_version: str = "v0.0.40"
-    # Version of the slurmdb plugin; the same as api_version when not given.
+    # Data-parser version in the URL (/slurm/<version>/jobs). None: the newest
+    # version the slurmrestd offers, read from its OpenAPI document.
+    api_version: str | None = None
+    # Version of the slurmdb plugin; when not given, the same as api_version,
+    # or detected like it.
     db_api_version: str | None = None
     user_name: str = ""
     # Exactly one of the three token settings is normally used.
@@ -46,11 +55,11 @@ class SlurmSettings(BaseModel):
     ca_file: Path | None = None
 
     @property
-    def effective_db_api_version(self) -> str:
+    def effective_db_api_version(self) -> str | None:
         return self.db_api_version or self.api_version
 
 
-class PollSettings(BaseModel):
+class PollSettings(SettingsSection):
     interval_seconds: float = Field(default=60.0, gt=0)
     # The contract caps history at 72 points of 5 minutes (6 hours); a shorter
     # window may be set here.
@@ -65,7 +74,7 @@ def _checked_pattern(value: str) -> str:
     return value
 
 
-class ExtraRunnerKind(BaseModel):
+class ExtraRunnerKind(SettingsSection):
     key: str
     label: str
     pattern: str
@@ -76,7 +85,7 @@ class ExtraRunnerKind(BaseModel):
         return _checked_pattern(value)
 
 
-class RunnerSettings(BaseModel):
+class RunnerSettings(SettingsSection):
     ci_pattern: str = r"^ci-\d+"
     dask_pattern: str = r"^dask-gateway"
     dask_scheduler_pattern: str = r"scheduler"
@@ -91,7 +100,7 @@ class RunnerSettings(BaseModel):
         return _checked_pattern(value)
 
 
-class GpuMetricsSettings(BaseModel):
+class GpuMetricsSettings(SettingsSection):
     source: Literal["none", "prometheus", "collector"] = "none"
     timeout_seconds: float = 5.0
     # prometheus
@@ -111,7 +120,7 @@ class GpuMetricsSettings(BaseModel):
         return self
 
 
-class GpuSettings(BaseModel):
+class GpuSettings(SettingsSection):
     # GRES name that denotes GPUs.
     gres_name: str = "gpu"
     # Display labels by lower-case GRES type; unknown types are upper-cased.
@@ -119,12 +128,12 @@ class GpuSettings(BaseModel):
     metrics: GpuMetricsSettings = Field(default_factory=GpuMetricsSettings)
 
 
-class StaticTokenSettings(BaseModel):
+class StaticTokenSettings(SettingsSection):
     enabled: bool = False
     tokens: list[str] = Field(default_factory=list)
 
 
-class OidcSettings(BaseModel):
+class OidcSettings(SettingsSection):
     enabled: bool = False
     issuer: str = ""
     client_id: str = ""
@@ -137,12 +146,25 @@ class OidcSettings(BaseModel):
             "offline_access",
         ]
     )
-    # Checked against the token's "aud" claim when set.
+    # JWT access tokens must be meant for this application. By default the
+    # "aud" (string or list), "azp" or "client_id" claim must name client_id.
+    # When audience is set, the "aud" claim must name that value instead.
     audience: str | None = None
+    # False turns the check off, for providers whose access tokens carry none
+    # of these claims. This weakens the check: a token the same issuer gave
+    # to any other application is then accepted.
+    verify_audience: bool = True
+    # Strings that are not well-formed JWTs are tried against the issuer's
+    # userinfo endpoint. Set false when the issuer only hands out JWTs; such
+    # strings are then refused without asking the issuer.
+    accept_opaque_tokens: bool = True
     username_claim: str = "preferred_username"
     # When not empty, the identity must carry at least one of these values in
     # its eduperson_entitlement or groups claim.
     required_entitlements: list[str] = Field(default_factory=list)
+    # Must be set to true to run with empty required_entitlements, that is,
+    # to let in everyone the issuer can authenticate.
+    allow_any_authenticated: bool = False
     # Explicit mapping to Slurm user names; keys are the subject or the value
     # of username_claim.
     username_map: dict[str, str] = Field(default_factory=dict)
@@ -154,15 +176,22 @@ class OidcSettings(BaseModel):
     def _enabled_needs_issuer(self) -> OidcSettings:
         if self.enabled and (not self.issuer or not self.client_id):
             raise ValueError("auth.oidc.issuer and auth.oidc.client_id are required")
+        if self.enabled and not self.required_entitlements and not self.allow_any_authenticated:
+            raise ValueError(
+                "auth.oidc is enabled without required_entitlements: every account the "
+                "issuer knows could sign in. Name at least one entitlement in "
+                "auth.oidc.required_entitlements, or set "
+                "auth.oidc.allow_any_authenticated = true to accept that on purpose"
+            )
         return self
 
 
-class AuthSettings(BaseModel):
+class AuthSettings(SettingsSection):
     static: StaticTokenSettings = Field(default_factory=StaticTokenSettings)
     oidc: OidcSettings = Field(default_factory=OidcSettings)
 
 
-class PrometheusExportSettings(BaseModel):
+class PrometheusExportSettings(SettingsSection):
     enabled: bool = False
 
 
@@ -170,7 +199,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="SLURM_MONITOR_",
         env_nested_delimiter="__",
-        extra="ignore",
+        extra="forbid",
     )
 
     cluster: str = "cluster"

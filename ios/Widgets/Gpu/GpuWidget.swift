@@ -27,7 +27,7 @@ enum GpuWidgetLogic {
 struct GpuFamilyView: View {
     let content: WidgetContent<GpuData>
     let size: WidgetLayoutSize
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(

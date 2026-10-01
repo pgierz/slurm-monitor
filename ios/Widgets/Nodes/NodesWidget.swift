@@ -32,8 +32,15 @@ enum NodesWidgetLogic {
         Format.ratio(data.allocated, data.total) + " alloc"
     }
 
+    /// The partition the widget shows: its own, or, when that is left
+    /// empty, the default partition from the app's settings; `nil` (all
+    /// partitions) when neither is set.
+    static func effectivePartition(_ configured: String?, settings: ServerSettings) -> String? {
+        normalisedPartition(configured) ?? normalisedPartition(settings.defaultPartition)
+    }
+
     static func fetch(loader: SnapshotLoader, configuration: NodesConfigurationIntent) async -> WidgetContent<NodesData> {
-        let partition: String? = normalisedPartition(configuration.partition)
+        let partition: String? = effectivePartition(configuration.partition, settings: ServerSettings.load())
         return await loader.nodes(partition: partition)
     }
 }
@@ -43,9 +50,9 @@ enum NodesWidgetLogic {
 struct NodesFamilyView: View {
     let content: WidgetContent<NodesData>
     let size: WidgetLayoutSize
-    /// The configured partition, shown in the title of the small layout.
+    /// The partition the data is for, shown in the title of the small layout.
     var partition: String? = nil
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(
@@ -88,7 +95,7 @@ struct NodesWidgetEntryView: View {
         NodesFamilyView(
             content: entry.content,
             size: WidgetLayoutSize(family),
-            partition: entry.configuration.partition
+            partition: NodesWidgetLogic.effectivePartition(entry.configuration.partition, settings: ServerSettings.load())
         )
     }
 }
@@ -102,7 +109,9 @@ struct NodesWidget: Widget {
             intent: NodesConfigurationIntent.self,
             provider: FamilyIntentProvider<NodesData, NodesConfigurationIntent>(
                 sample: SampleData.nodes.data,
-                fetch: NodesWidgetLogic.fetch(loader:configuration:)
+                fetch: { (loader: SnapshotLoader, configuration: NodesConfigurationIntent) in
+                    await NodesWidgetLogic.fetch(loader: loader, configuration: configuration)
+                }
             )
         ) { (entry: FamilyEntry<NodesData, NodesConfigurationIntent>) in
             NodesWidgetEntryView(entry: entry)

@@ -71,6 +71,37 @@ final class LoaderTests: XCTestCase {
         XCTAssertEqual(content, .vpnNeeded(last: nil, generatedAt: nil))
     }
 
+    func testLockedCredentialStoreShowsTheCacheNotSignIn() async {
+        let fetcher = StubFetcher()
+        let cache = InMemorySnapshotCache()
+        fetcher.gpuResult = .success(SampleData.gpu)
+        _ = await makeLoader(fetcher, cache: cache).gpu()
+        fetcher.gpuResult = .failure(.credentialStore)
+        let content = await makeLoader(fetcher, cache: cache).gpu()
+        XCTAssertEqual(content, .vpnNeeded(last: SampleData.gpu.data, generatedAt: generatedAt))
+    }
+
+    func testCachedOnlyNeverAsksTheServer() async {
+        let fetcher = StubFetcher()
+        let cache = InMemorySnapshotCache()
+        fetcher.queueResult = .success(SampleData.queue)
+        fetcher.nodesResult = .success(SampleData.nodes)
+        let loader = makeLoader(fetcher, cache: cache)
+
+        // Nothing cached yet, although the server would answer.
+        let empty = await loader.cachedOnly().queue(partition: "mpp")
+        XCTAssertEqual(empty, .vpnNeeded(last: nil, generatedAt: nil))
+
+        _ = await loader.queue(partition: "mpp")
+        let cached = await loader.cachedOnly().queue(partition: "mpp")
+        XCTAssertEqual(cached, .vpnNeeded(last: SampleData.queue.data, generatedAt: generatedAt))
+        // Another variant of the family is another key.
+        let other = await loader.cachedOnly().queue()
+        XCTAssertEqual(other, .vpnNeeded(last: nil, generatedAt: nil))
+        let nodes = await loader.cachedOnly().nodes()
+        XCTAssertEqual(nodes, .vpnNeeded(last: nil, generatedAt: nil))
+    }
+
     func testUnauthorizedAndNoCredentialsGiveSignInNeeded() async {
         let fetcher = StubFetcher()
         let cache = InMemorySnapshotCache()

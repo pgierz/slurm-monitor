@@ -45,8 +45,22 @@ for attempt in 1 2 3 4 5; do
   mkdir -p "$work/repo/runs/$sha"
   rm -rf "$work/repo/runs/$sha/$job"
   cp -R "$dest" "$work/repo/runs/$sha/$job"
-  # Keep the branch small: only the eight most recent runs stay.
-  (cd "$work/repo/runs" && ls -t | tail -n +9 | xargs -I{} rm -rf "{}")
+  # Keep the branch small: only the eight most recent runs stay. A fresh
+  # clone gives every file the same modification time, so the age of a run
+  # is read from the published_at.txt files inside it (ISO 8601 in UTC,
+  # which sorts as text); the newest of its jobs counts. A run without any
+  # sorts as oldest.
+  (
+    cd "$work/repo/runs" || exit 0
+    for run in */; do
+      run="${run%/}"
+      [ -d "$run" ] || continue
+      stamp="$(cat "$run"/*/published_at.txt 2>/dev/null | sort | tail -n 1)"
+      printf '%s\t%s\n' "${stamp:-0000}" "$run"
+    done | sort -r | tail -n +9 | cut -f 2- | while IFS= read -r old; do
+      [ -n "$old" ] && rm -rf "./$old"
+    done
+  )
   echo "$sha" > "$work/repo/LATEST"
   git -C "$work/repo" add -A
   git -C "$work/repo" -c user.name="ci" -c user.email="ci@users.noreply.github.com" commit -q -m "CI output for $sha ($job)" || exit 0

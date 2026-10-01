@@ -67,6 +67,12 @@ def wait_seconds(job: JobRecord, now: int) -> int:
     return max(0, now - job.submit_time) if job.submit_time is not None else 0
 
 
+def is_waiting_for_resources(job: JobRecord) -> bool:
+    """False for held jobs and jobs waiting on a dependency: their wait says
+    nothing about how long the cluster keeps people waiting."""
+    return not (job.reason.startswith("Dependency") or normalise_reason(job.reason) == "Held")
+
+
 class QueueAggregator:
     def __init__(self, gpu: GpuSettings) -> None:
         self._gpu = gpu
@@ -348,7 +354,10 @@ class GpuAggregator:
             allocated=sum(type_allocated.values()),
             idle_allocated=idle_allocated if with_metrics else None,
             pending_jobs=len(pending),
-            longest_wait_seconds=max((wait_seconds(job, now) for job in pending), default=0),
+            longest_wait_seconds=max(
+                (wait_seconds(job, now) for job in pending if is_waiting_for_resources(job)),
+                default=0,
+            ),
             types=types,
             nodes=nodes,
             top_users=[GpuUser(user=u, cards=c) for u, c in top_users[:TOP_USERS_LIMIT]],

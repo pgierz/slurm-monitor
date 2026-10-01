@@ -243,7 +243,7 @@ def test_unknown_fields_are_scrubbed():
     assert j["note"] == "asked by %s, see %s" % (anonymiser.users["jdoe"],
                                                  anonymiser.users["mroe"])
     node = result["nodes"]["nodes"][0]
-    assert node["reason"] == "bad DIMM, reported by %s" % anonymiser.users["jdoe"]
+    assert anonymiser.free_text("reported by jdoe") == "reported by %s" % anonymiser.users["jdoe"]
     assert anonymiser.free_text("see ~/x/y and /p/q/r.txt ok").count("/scrubbed/path-") == 2
     assert anonymiser.free_text("write to a.b@site.example") .endswith("@example.org")
     assert result["jobs"]["meta"]["client"]["source"] == "scrubbed"
@@ -255,6 +255,7 @@ def test_cluster_facts_are_kept():
     result, _, _ = scrub_all()
     assert result["nodes"]["nodes"][0] == dict(
         before["nodes"]["nodes"][0], reason=result["nodes"]["nodes"][0]["reason"])
+    before["qos"]["qos"][0]["description"] = result["qos"]["qos"][0]["description"]
     assert result["qos"] == before["qos"]
     for old, new in zip(before["jobs"]["jobs"], result["jobs"]["jobs"]):
         for key in ("job_id", "partition", "qos", "job_state", "state_reason", "nodes",
@@ -383,3 +384,72 @@ def test_main_end_to_end(tmp_path, monkeypatch, capsys):
                       "--output-dir", str(out)])
     assert code == 0 and "jdoe" in (out / "jobs.json").read_text()
     assert "NOT anonymised" in capsys.readouterr().out
+
+
+def test_node_reason_and_qos_description_are_replaced_as_a_whole():
+    payloads = all_payloads()
+    payloads["nodes"]["nodes"].append(dict(
+        nodes_payload()["nodes"][0], name="gpu-006", reason="",
+        reason_set_by_user="jdoe"))
+    payloads["qos"]["qos"][0]["description"] = "for Jane's group, ask Jane Doe"
+    result, residue, anonymiser = scrub_all(payloads)
+    first, second = result["nodes"]["nodes"]
+    assert first["reason"].startswith("c-") and "DIMM" not in first["reason"]
+    assert second["reason"] == ""  # empty stays empty
+    description = result["qos"]["qos"][0]["description"]
+    assert description.startswith("c-") and "Jane" not in json.dumps(result)
+    # the job field the server classifies on is another key and is kept
+    assert job(result, 1002)["state_reason"] == "Priority"
+    assert "nodes" not in residue and "qos" not in residue
+
+
+def test_reason_set_by_user_is_a_user_name():
+    payloads = all_payloads()
+    payloads["nodes"]["nodes"][0]["reason_set_by_user"] = "opsperson"
+    result, _, anonymiser = scrub_all(payloads)
+    node = result["nodes"]["nodes"][0]
+    assert node["reason_set_by_user"] == anonymiser.users["opsperson"]
+    assert "opsperson" not in json.dumps(result)
+    # root is never renamed
+    assert scrub_all()[0]["nodes"]["nodes"][0]["reason_set_by_user"] == "root"
+
+
+def test_reservation_names_are_hashed_also_in_lists():
+    payloads = all_payloads()
+    payloads["nodes"]["nodes"][0]["reservation"] = "jdoe_workshop"
+    payloads["jobs"]["jobs"][0]["resv_name"] = "jdoe_workshop"
+    payloads["jobs"]["jobs"][1]["reservation"] = "jdoe_workshop,summer-school"
+    payloads["jobs"]["jobs"][2]["reservations"] = ["summer-school", "jdoe_workshop"]
+    payloads["jobs"]["jobs"][3]["resv_name"] = ""
+    result, residue, _ = scrub_all(payloads)
+    text = json.dumps(result)
+    assert "workshop" not in text and "summer-school" not in text
+    hashed = result["nodes"]["nodes"][0]["reservation"]
+    assert hashed.startswith("resv-") and len(hashed) == 13
+    # the same reservation gets the same pseudonym everywhere
+    assert job(result, 1001)["resv_name"] == hashed
+    both = job(result, 1002)["reservation"].split(",")
+    assert both[0] == hashed and both[1].startswith("resv-") and both[1] != hashed
+    assert job(result, 1003)["reservations"] == [both[1], hashed]
+    assert job(result, 1004)["resv_name"] == ""
+    assert residue == {} or list(residue) == ["partitions"]
+
+
+def test_residue_is_a_plain_substring_search_ignoring_case():
+    anonymiser = dump.Anonymiser(salt="test")
+    anonymiser.collect({"jobs": [{"job_id": 1, "user_name": "pgierz", "account": "paleo",
+                                  "group_name": "ab"}]})
+    leftovers = {"nodes": [
+        {"name": "n1", "features": "pgierz_workshop"},      # inside a longer word
+        {"name": "n2", "features": "home-of-PGierz"},       # another case
+        {"name": "n3", "features": "xpaleoz"},              # an account name
+        {"name": "n4", "features": "cab", "extra": "fine"},  # two characters: not searched
+    ]}
+    assert anonymiser.residue(leftovers) == [
+        ("nodes.features", "paleo"), ("nodes.features", "pgierz")]
+    # the word-boundary search this replaces missed exactly that case
+    payloads = all_payloads()
+    payloads["nodes"]["nodes"][0]["features"] = ["a100", "jdoe_workshop", "JDOE2"]
+    _, residue, _ = scrub_all(payloads)
+    assert ("nodes.features", "jdoe") in residue["nodes"]
+    assert dump.Anonymiser(salt="x").residue(leftovers) == []

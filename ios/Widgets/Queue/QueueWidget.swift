@@ -32,12 +32,19 @@ enum QueueWidgetLogic {
         Format.queueLine(running: data.running, pending: data.pending)
     }
 
+    /// The partition the widget shows: its own, or, when that is left
+    /// empty, the default partition from the app's settings; `nil` (all
+    /// partitions) when neither is set.
+    static func effectivePartition(_ configured: String?, settings: ServerSettings) -> String? {
+        normalisedPartition(configured) ?? normalisedPartition(settings.defaultPartition)
+    }
+
     /// Loads the queue for a configuration. The scope decides only which
     /// user is sent: "mine" leaves it to the client (the username from the
     /// settings, or the signed-in user), "everyone" asks for no particular
     /// user and is cached under its own key.
     static func fetch(loader: SnapshotLoader, configuration: QueueConfigurationIntent) async -> WidgetContent<QueueData> {
-        let partition: String? = normalisedPartition(configuration.partition)
+        let partition: String? = effectivePartition(configuration.partition, settings: ServerSettings.load())
         switch configuration.scope {
         case .mine:
             return await loader.queue(partition: partition, user: UserScope.configured)
@@ -52,7 +59,7 @@ enum QueueWidgetLogic {
 struct QueueFamilyView: View {
     let content: WidgetContent<QueueData>
     let size: WidgetLayoutSize
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(
@@ -105,7 +112,9 @@ struct QueueWidget: Widget {
             intent: QueueConfigurationIntent.self,
             provider: FamilyIntentProvider<QueueData, QueueConfigurationIntent>(
                 sample: SampleData.queue.data,
-                fetch: QueueWidgetLogic.fetch(loader:configuration:)
+                fetch: { (loader: SnapshotLoader, configuration: QueueConfigurationIntent) in
+                    await QueueWidgetLogic.fetch(loader: loader, configuration: configuration)
+                }
             )
         ) { (entry: FamilyEntry<QueueData, QueueConfigurationIntent>) in
             QueueWidgetEntryView(entry: entry)

@@ -6,9 +6,9 @@
   "data": {
     "total": 240,
     "allocated": 203,
-    "idle": 23,
+    "idle": 24,
     "drained": 10,
-    "down": 4,
+    "down": 3,
     "partitions": [
       {
         "name": "mpp",
@@ -930,9 +930,9 @@
         "name": "fat",
         "total": 10,
         "allocated": 9,
-        "idle": 0,
+        "idle": 1,
         "drained": 0,
-        "down": 1,
+        "down": 0,
         "nodes": [
           {
             "name": "fat-001",
@@ -972,7 +972,7 @@
           },
           {
             "name": "fat-010",
-            "state": "down"
+            "state": "idle"
           }
         ]
       },

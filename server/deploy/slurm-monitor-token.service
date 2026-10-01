@@ -1,0 +1,29 @@
+# Issues a fresh Slurm token for the Slurm Monitor server.
+#
+# Started by slurm-monitor-token.timer, and once before the server at boot.
+# Runs as root on a host with scontrol and a readable Slurm configuration;
+# only root or the SlurmUser may issue a token for another user. Adapt the
+# user name (twice: username= and chown) and the lifespan. The lifespan
+# (2 hours) is several times the timer's period (30 minutes), so a few missed
+# runs do no harm.
+
+[Unit]
+Description=Issue the Slurm token of the Slurm Monitor server
+After=network-online.target
+Wants=network-online.target
+Before=slurm-monitor-server.service
+
+[Service]
+Type=oneshot
+# /run/slurm-monitor, owned by root, kept between runs.
+RuntimeDirectory=slurm-monitor
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+UMask=0077
+# Written to a second file and renamed, so that the server never reads half a
+# token; an empty answer of scontrol leaves the old token in place.
+ExecStart=/bin/sh -c 'scontrol token username=slurm-monitor lifespan=7200 \
+    | sed "s/^SLURM_JWT=//" > /run/slurm-monitor/slurm.jwt.new \
+    && test -s /run/slurm-monitor/slurm.jwt.new \
+    && chown slurm-monitor: /run/slurm-monitor/slurm.jwt.new \
+    && mv /run/slurm-monitor/slurm.jwt.new /run/slurm-monitor/slurm.jwt'

@@ -5,7 +5,7 @@ Everything here except `WidgetBundle.swift` also compiles into the
 
 ```
 WidgetBundle.swift            @main bundle; list every Widget here
-Shared/Theme.swift            palette, fonts, spacing, WidgetLayoutSize, WidgetLinks
+Shared/Theme.swift            palette, reduced colour, fonts, spacing, WidgetLayoutSize, WidgetLinks
 Shared/Components.swift       header, figures, bars, footer, legend, chip
 Shared/StateViews.swift       VPN needed, Sign in needed, Not configured
 Shared/FamilyWidgetView.swift the container every Home Screen widget uses
@@ -25,7 +25,43 @@ choose stale colours yourself. Only the top-level entry view reads
 
 The body gets the content area inside the system margin (16 pt): 138 × 138
 small, 332 × 138 medium, 332 × 350 large, 683 × 322 extra large. The header
-takes about 22 pt of the height, gap included.
+takes about 22 pt of the height, gap included. Those are the largest phone
+sizes: on smaller phones the small widget is 158 or 148 pt square and the
+large one 338 × 354, so a layout must not count on the full height. Take the
+height from a `GeometryReader` where rows or a ring have to fit
+(`NodesSmallView`, `QueueLargeView`), and add a snapshot at the small size.
+
+## Reduced colour
+
+In the tinted Home Screen (iOS 18) and in StandBy at night the system removes
+the widget background and flattens every colour to one tint; only the
+opacity of a colour survives. `FamilyWidgetView` reads
+`@Environment(\.widgetRenderingMode)` and, in any mode but `.fullColor`, sets
+the environment value `\.reducedColour`. The components read it themselves, so
+a widget body passes nothing on. What changes:
+
+- Figures and text that are blue or amber become the primary colour; stale
+  figures are the primary colour at half opacity.
+- Tracks and hairlines become faint (no opaque dark fills, which would turn
+  into solid blocks).
+- Node states are told apart by opacity: allocated 1.0, idle 0.25, drained
+  0.5, down 1.0 and hollow (an outlined cell, a thin segment in ring and bar).
+- GPU cells are outlines with text, never a fill under text.
+- The primary series is marked `.widgetAccentable()`: allocated segments,
+  bar fills, the node grid, allocated GPU cells, the main figure
+  (`FigureView(…, accent: true)`).
+
+In a view of your own:
+
+```swift
+@Environment(\.reducedColour) private var reduced
+…
+.foregroundStyle(Theme.figure(Theme.pending, dimmed: isStale, reduced: reduced))
+.fill(Theme.trackColour(reduced: reduced))
+```
+
+Never tell two states apart by hue alone. The full-colour appearance must not
+change when you add the reduced one.
 
 ## Theme.swift
 
@@ -35,6 +71,11 @@ Theme.background, .primaryText, .secondaryText, .running (blue), .pending (amber
       .track, .idleOutline, .idleSegment, .drained, .down, .gpuBusyFill,
       .gpuIdleAllocatedFill, .staleFigure, .hairline
 Theme.figure(_ colour: Color, dimmed: Bool) -> Color      // the colour, or stale grey
+Theme.figure(_ colour: Color, dimmed: Bool, reduced: Bool) -> Color   // primary (half opacity when dimmed) in reduced colour
+Theme.secondary(reduced: Bool), .trackColour(reduced: Bool), .hairlineColour(reduced: Bool) -> Color
+Theme.reducedOpacity(for: NodeState, dimmed: Bool = false) -> Double, .reducedColour(for:dimmed:) -> Color
+Theme.isHollowWhenReduced(_ state: NodeState) -> Bool     // true for .down
+EnvironmentValues.reducedColour: Bool                     // set by FamilyWidgetView
 Theme.colour(for: NodeState) -> Color
 Theme.titleFont, .timeFont, .labelFont (10 pt), .footerFont (11 pt), .footerValueFont (11 pt mono)
 Theme.figureFont(size: CGFloat, weight: Font.Weight = .semibold) -> Font   // monospaced
@@ -50,16 +91,18 @@ Parameters with defaults may be left out; the order is as written.
 ```swift
 WidgetHeader(title: String, time: String, timeIsStale: Bool = false, showsRefresh: Bool = false)
 FigureView(value: String, label: String, colour: Color = Theme.primaryText,
-           size: FigureSize = .large, dimmed: Bool = false)   // .large 32, .medium 24, .small 15 pt
+           size: FigureSize = .large, dimmed: Bool = false, accent: Bool = false)   // .large 32, .medium 24, .small 15 pt
 SectionLabel(text: String)
 ProportionalBar(fraction: Double, colour: Color = Theme.running, height: CGFloat = 6, dimmed: Bool = false)
 LabelledBar(label: String, fraction: Double, value: String, colour: Color = Theme.running,
             labelWidth: CGFloat = 68, valueWidth: CGFloat = 28, dimmed: Bool = false)
 StackedBar(segments: [BarSegment], height: CGFloat = 6, dimmed: Bool = false)
-BarSegment(weight: Double, colour: Color)                     // weights are normalised by their sum
+BarSegment(weight: Double, colour: Color, reducedOpacity: Double = 1.0,
+           hollowWhenReduced: Bool = false, accent: Bool = false)   // weights are normalised by their sum
 Hairline()
 FooterRow(left: String, right: String, rightColour: Color = Theme.primaryText, dimmed: Bool = false)
-LegendItem(colour: Color, label: String, value: String? = nil, outline: Color? = nil, dimmed: Bool = false)
+LegendItem(colour: Color, label: String, value: String? = nil, outline: Color? = nil, dimmed: Bool = false,
+           reducedOpacity: Double = 1.0, hollowWhenReduced: Bool = false)
 StateChip(text: String, colour: Color, width: CGFloat = 26, dimmed: Bool = false)
 RefreshButton()                                               // already inside WidgetHeader
 ```
@@ -74,6 +117,7 @@ VpnNeededView(size: WidgetLayoutSize, lastSeen: String?)
 SignInNeededView(size: WidgetLayoutSize)
 NotConfiguredView(size: WidgetLayoutSize)
 StateMessageView(size:, symbol:, title:, detail: String? = nil, footerLeft:, footerRight: String? = nil)
+StateSymbols.vpnNeeded ("lock.shield"), .signInNeeded, .notConfigured   // the app uses the same symbols
 ```
 
 The container shows these; a widget rarely needs them directly.
@@ -87,14 +131,15 @@ FamilyWidgetView<T, Live: View>(
     content: WidgetContent<T>,
     title: String,                          // header of the state views
     liveTitle: ((T) -> String)? = nil,      // header of the live layout, from the data
-    timeZone: TimeZone = .current,          // tests pass a fixed one
+    timeZone: TimeZone = .autoupdatingCurrent,   // tests pass a fixed one
     lastSeen: @escaping (T) -> String,      // key figures for "VPN needed"
     @ViewBuilder live: @escaping (T, Bool) -> Live   // (data, isStale) -> body
 )
 ```
 
 The refresh button appears for every size but `.small`. When stale, the
-header time reads "as of HH:mm" in amber.
+header time reads "as of HH:mm" in amber; in a small widget, where the title
+needs the room, the amber time alone.
 
 ## FamilyTimeline.swift
 
@@ -102,17 +147,38 @@ header time reads "as of HH:mm" in amber.
 struct FamilyEntry<T, Configuration>: TimelineEntry { date; content: WidgetContent<T>; configuration }
 struct NoConfiguration {}
 FamilyTimeline.sampleEntry(_ sample: T, configuration:) -> FamilyEntry      // placeholder, gallery
-FamilyTimeline.timeline(configuration:, fetch: (SnapshotLoader) async -> WidgetContent<T>) async -> Timeline
+FamilyTimeline.snapshotEntry(sample:, configuration:, isPreview:, fetch:) async -> FamilyEntry
+FamilyTimeline.timeline(configuration:, fetch: @Sendable (SnapshotLoader) async -> WidgetContent<T>) async -> Timeline
+FamilyTimeline.load(loader:, deadline: = loadDeadline, fetch:) async -> WidgetContent<T>   // one load within 20 s
+FamilyTimeline.withDeadline(seconds:, operation:) async -> Value?           // nil when out of time
+FamilyTimeline.entries(for: content, configuration:, now:) -> [FamilyEntry] // now, and when live turns stale
+FamilyTimeline.staleDate(for: content, after: now) -> Date?
+FamilyTimeline.content(_ content, at: date) -> WidgetContent<T>             // live becomes stale after 10 min
+FamilyTimeline.cachedContent(now:, fetch:) async -> WidgetContent<T>?       // the cache alone
 FamilyTimeline.nextRefresh(after:, content:) -> Date                        // 15 min; 5 min for .vpnNeeded
 
 // with AppIntentConfiguration:
-FamilyIntentProvider<T, Intent>(sample: T, fetch: (SnapshotLoader, Intent) async -> WidgetContent<T>)
+FamilyIntentProvider<T: Sendable, Intent>(sample: T, fetch: @Sendable (SnapshotLoader, Intent) async -> WidgetContent<T>)
 // with StaticConfiguration:
-FamilyStaticProvider<T>(sample: T, fetch: (SnapshotLoader) async -> WidgetContent<T>)
+FamilyStaticProvider<T: Sendable>(sample: T, fetch: @Sendable (SnapshotLoader) async -> WidgetContent<T>)
 ```
 
-Both providers hand out sample data for the placeholder and the gallery
-snapshot, and one entry per timeline.
+Both providers hand out sample data for the placeholder and the widget
+gallery. Outside the gallery (`context.isPreview` false) a snapshot shows what
+the cache holds, and sample data only when it holds nothing.
+
+A timeline load is bounded: after 20 seconds (`FamilyTimeline.loadDeadline`)
+it is cancelled and the widget shows "VPN needed" with the cached snapshot.
+A timeline has one entry, or two: live content gets a second entry at
+`generatedAt` + 10 minutes that shows the same data as stale, so that the
+widget does not present an old snapshot as fresh until the system reloads it.
+
+Write `fetch` as a closure literal (`{ (loader: SnapshotLoader) in await … }`),
+as in the widgets here; it runs in a child task and must be `@Sendable`.
+
+The Queue and Nodes widgets take their partition from the widget
+configuration and, when that is left empty, from the default partition in the
+app's settings (`QueueWidgetLogic.effectivePartition`).
 
 ## Worked example: a new widget
 
@@ -143,7 +209,7 @@ struct CiRunnersSmallView: View {                     // body only, plain inputs
 
 struct CiRunnersFamilyView: View {                    // what the tests render
     let content: WidgetContent<RunnersData>
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
     var body: some View {
         FamilyWidgetView(
             kind: .runners, size: .small, content: content, title: "CI runners", timeZone: timeZone,

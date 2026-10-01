@@ -53,6 +53,19 @@ final class GpuSnapshotTests: XCTestCase {
         render(stale, layout: .medium, size: .medium, named: "gpu-medium-stale")
     }
 
+    func testGpuSmall148() {
+        render(live, layout: .small, size: .small148, named: "gpu-small-148")
+    }
+
+    /// The reduced style of the tinted Home Screen and of StandBy at night,
+    /// forced through the environment: cells as outlines, no fill under text.
+    func testGpuLargeAccented() {
+        let view = GpuFamilyView(content: live, size: .large, timeZone: timeZone)
+            .environment(\.reducedColour, true)
+        let data: Data? = WidgetSnapshotter.snapshot(view, size: .large, named: "gpu-large-accented", in: self)
+        XCTAssertNotNil(data)
+    }
+
     func testGpuSmallVpnNeeded() {
         let content = WidgetContent<GpuData>.vpnNeeded(last: SampleData.gpu.data, generatedAt: SampleData.generatedAt)
         render(content, layout: .small, size: .small, named: "gpu-small-vpn")

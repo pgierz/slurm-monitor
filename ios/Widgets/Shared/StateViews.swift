@@ -1,7 +1,16 @@
 import SwiftUI
+import WidgetKit
 
 // The bodies of the three states without data. `FamilyWidgetView` draws the
 // header above them.
+
+/// SF Symbols of the states, shared with the Lock Screen accessories. The
+/// app uses the same names.
+enum StateSymbols {
+    static let vpnNeeded = "lock.shield"
+    static let signInNeeded = "key"
+    static let notConfigured = "gearshape"
+}
 
 /// Symbol, title and footer; the common shape of the state views.
 struct StateMessageView: View {
@@ -13,6 +22,7 @@ struct StateMessageView: View {
     var detail: String? = nil
     let footerLeft: String
     var footerRight: String? = nil
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -47,7 +57,8 @@ struct StateMessageView: View {
     private var symbolImage: some View {
         Image(systemName: symbol)
             .font(.system(size: symbolSize, weight: .regular))
-            .foregroundStyle(Theme.pending)
+            .foregroundStyle(Theme.figure(Theme.pending, dimmed: false, reduced: reduced))
+            .widgetAccentable()
     }
 
     private var titleText: some View {
@@ -63,7 +74,7 @@ struct StateMessageView: View {
         if let detail = detail {
             Text(detail)
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(2)
         }
     }
@@ -72,14 +83,14 @@ struct StateMessageView: View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(footerLeft)
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 4)
             if let footerRight = footerRight {
                 Text(footerRight)
                     .font(Theme.footerValueFont)
-                    .foregroundStyle(Theme.secondaryText)
+                    .foregroundStyle(Theme.secondary(reduced: reduced))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -112,7 +123,7 @@ struct VpnNeededView: View {
     var body: some View {
         StateMessageView(
             size: size,
-            symbol: "shield.slash",
+            symbol: StateSymbols.vpnNeeded,
             title: "VPN needed",
             detail: "Connect to the VPN, then refresh.",
             footerLeft: lastSeen == nil ? "no earlier snapshot" : "last seen",
@@ -128,7 +139,7 @@ struct SignInNeededView: View {
     var body: some View {
         StateMessageView(
             size: size,
-            symbol: "key",
+            symbol: StateSymbols.signInNeeded,
             title: "Sign in needed",
             footerLeft: "Tap to open the app"
         )
@@ -142,7 +153,7 @@ struct NotConfiguredView: View {
     var body: some View {
         StateMessageView(
             size: size,
-            symbol: "gearshape",
+            symbol: StateSymbols.notConfigured,
             title: "Not configured",
             footerLeft: "Open the app to set the server"
         )

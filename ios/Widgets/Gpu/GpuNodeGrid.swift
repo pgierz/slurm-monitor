@@ -110,6 +110,7 @@ struct GpuNodeGrid: View {
     let width: CGFloat
     let metrics: GpuGridMetrics
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.rowSpacing) {
@@ -130,7 +131,7 @@ struct GpuNodeGrid: View {
     private var moreLine: some View {
         Text(moreText)
             .font(Theme.labelFont)
-            .foregroundStyle(Theme.secondaryText)
+            .foregroundStyle(Theme.secondary(reduced: reduced))
             .lineLimit(1)
             .frame(height: metrics.moreLineHeight)
     }
@@ -142,6 +143,7 @@ struct GpuGridSectionView: View {
     let width: CGFloat
     let metrics: GpuGridMetrics
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.rowSpacing) {
@@ -169,12 +171,12 @@ struct GpuGridSectionView: View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(section.group.heading)
                 .font(Theme.labelFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(1)
             Spacer(minLength: 4)
             Text(section.group.type.allocatedText)
                 .font(Theme.figureFont(size: 10, weight: .medium))
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
         }
         .frame(width: headingWidth, height: metrics.headingHeight)
@@ -187,6 +189,7 @@ struct GpuNodeRow: View {
     let cellWidth: CGFloat
     let metrics: GpuGridMetrics
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .center, spacing: metrics.nameGap) {
@@ -199,8 +202,11 @@ struct GpuNodeRow: View {
     private var nameColour: Color {
         switch node.state {
         case .allocated, .idle, .unknown:
-            return Theme.figure(Theme.primaryText, dimmed: isStale)
+            return Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced)
         case .drained, .down:
+            if reduced {
+                return Theme.primaryText.opacity(isStale ? 0.3 : 0.6)
+            }
             return Theme.figure(Theme.secondaryText, dimmed: isStale)
         }
     }
@@ -229,6 +235,8 @@ struct GpuLegendEntry {
     let label: String
     let fill: Color
     let outline: Color
+    /// The card state the entry stands for; its reduced style is taken from it.
+    let state: CardState
 }
 
 /// The legend of the card states. Without metrics, busy and idle are
@@ -250,14 +258,14 @@ struct GpuLegend: View {
     private var entries: [GpuLegendEntry] {
         var result: [GpuLegendEntry] = []
         if metricsAvailable {
-            result.append(GpuLegendEntry(label: "busy", fill: Theme.gpuBusyFill, outline: Theme.running))
-            result.append(GpuLegendEntry(label: "idle", fill: Theme.gpuIdleAllocatedFill, outline: Theme.pending))
+            result.append(GpuLegendEntry(label: "busy", fill: Theme.gpuBusyFill, outline: Theme.running, state: .busy))
+            result.append(GpuLegendEntry(label: "idle", fill: Theme.gpuIdleAllocatedFill, outline: Theme.pending, state: .idleAllocated))
         } else {
-            result.append(GpuLegendEntry(label: "allocated", fill: Theme.gpuBusyFill, outline: Theme.running))
+            result.append(GpuLegendEntry(label: "allocated", fill: Theme.gpuBusyFill, outline: Theme.running, state: .allocated))
         }
-        result.append(GpuLegendEntry(label: "free", fill: Color.clear, outline: Theme.idleOutline))
-        result.append(GpuLegendEntry(label: "drained", fill: Color.clear, outline: Theme.drained))
-        result.append(GpuLegendEntry(label: "down", fill: Color.clear, outline: Theme.down))
+        result.append(GpuLegendEntry(label: "free", fill: Color.clear, outline: Theme.idleOutline, state: .free))
+        result.append(GpuLegendEntry(label: "drained", fill: Color.clear, outline: Theme.drained, state: .drained))
+        result.append(GpuLegendEntry(label: "down", fill: Color.clear, outline: Theme.down, state: .down))
         return result
     }
 
@@ -280,9 +288,18 @@ struct GpuLegend: View {
                 LegendItem(
                     colour: isStale ? Color.clear : items[index].fill,
                     label: items[index].label,
-                    outline: isStale ? Theme.staleFigure : items[index].outline
+                    outline: isStale ? Theme.staleFigure : items[index].outline,
+                    reducedOpacity: reducedOpacity(items[index]),
+                    hollowWhenReduced: true
                 )
             }
         }
+    }
+
+    /// In reduced colour the swatches are outlines, as the cells are, in
+    /// the opacity of the cell outline.
+    private func reducedOpacity(_ entry: GpuLegendEntry) -> Double {
+        let factor: Double = isStale ? Theme.reducedStaleFactor : 1.0
+        return GpuCardStyle.reducedOutlineOpacity(for: entry.state) * factor
     }
 }

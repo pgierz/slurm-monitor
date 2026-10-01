@@ -19,7 +19,7 @@ struct CiRunnersSmallView: View {
 
     private var figures: some View {
         HStack(alignment: .top, spacing: 10) {
-            FigureView(value: "\(data.ci.runnersAlive)", label: "alive", colour: Theme.running, size: .large, dimmed: isStale)
+            FigureView(value: "\(data.ci.runnersAlive)", label: "alive", colour: Theme.running, size: .large, dimmed: isStale, accent: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             FigureView(value: "\(data.ci.jobsWaiting)", label: "waiting", colour: Theme.pending, size: .large, dimmed: isStale)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -31,7 +31,7 @@ struct CiRunnersSmallView: View {
 /// The screenshot tests construct this directly.
 struct CiRunnersFamilyView: View {
     let content: WidgetContent<RunnersData>
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(

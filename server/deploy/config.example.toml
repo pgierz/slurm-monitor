@@ -15,16 +15,21 @@ port = 8080
 
 [slurm]
 base_url = "https://slurm.example.org:6820"     # example; default "http://localhost:6820"
-# Version of the slurmrestd OpenAPI plugin, as in the URL /slurm/<version>/jobs.
-api_version = "v0.0.40"
-# Version of the slurmdb plugin (/slurmdb/<version>/qos); defaults to api_version.
-# db_api_version = "v0.0.40"
+# Data-parser version, as in the URL /slurm/<version>/jobs. Default: unset;
+# the server then reads the slurmrestd's OpenAPI document (/openapi/v3, else
+# /openapi.json, else /openapi) at start-up, takes the newest version offered,
+# and logs it; it looks again when jobs or nodes answer 404 repeatedly (after
+# a Slurm upgrade). Set a version here only to hold the server to it.
+# api_version = "v0.0.41"
+# Version of the slurmdb plugin (/slurmdb/<version>/qos). Default: unset;
+# then api_version, or detected like it.
+# db_api_version = "v0.0.41"
 # Slurm user the token belongs to (sent as X-SLURM-USER-NAME).
 user_name = "slurm-monitor"                     # example; default ""
 # The Slurm JWT (sent as X-SLURM-USER-TOKEN). Use exactly one of the three:
 #   token          the token itself; better given as SLURM_MONITOR_SLURM__TOKEN
 #   token_file     a file holding the token, read anew on every poll, so that
-#                  a cron job may rotate it
+#                  a timer may rotate it (deploy/slurm-monitor-token.timer)
 #   token_command  a command printing the token ("SLURM_JWT=..." is understood)
 # token = "..."
 token_file = "/run/slurm-monitor/slurm.jwt"     # example; default unset
@@ -36,6 +41,8 @@ timeout_seconds = 30.0
 # ca_file = "/etc/ssl/certs/institute-ca.pem"
 
 [poll]
+# While polls fail the interval doubles, up to five minutes; the first
+# success brings it back.
 interval_seconds = 60
 # Length of the history kept in memory. The contract allows at most 72 points
 # of five minutes (6 hours); a shorter window may be set.
@@ -98,14 +105,29 @@ enabled = false
 # The public client the app signs in with (authorization code flow with PKCE).
 # client_id = "slurm-monitor-app"
 scopes = ["openid", "profile", "email", "eduperson_entitlement", "offline_access"]
-# When set, JWT access tokens must carry this audience. Opaque tokens cannot
-# be checked for an audience.
-# audience = "slurm-monitor-app"
+# JWT access tokens must be meant for this application: by default their
+# "aud" (string or list), "azp" or "client_id" claim must name client_id.
+# When audience is set, "aud" must name that value instead.
+# audience = "https://slurm-monitor.example.org"
+# false turns that check off, for providers whose access tokens carry none of
+# the three claims. This weakens the check: a token the issuer gave to any
+# other application is then accepted here too.
+verify_audience = true
+# Strings that are not well-formed JWTs are taken for opaque access tokens
+# and tried against the issuer's userinfo endpoint. Opaque tokens cannot be
+# checked for an audience. Set false when the issuer only hands out JWT
+# access tokens; anything else is then refused without asking the issuer.
+accept_opaque_tokens = true
 # Claim giving the Slurm user name.
 username_claim = "preferred_username"
-# When not empty, the identity must hold at least one of these values in its
-# eduperson_entitlement or groups claim; otherwise the answer is 403.
+# The identity must hold at least one of these values in its
+# eduperson_entitlement, entitlements or groups claim; otherwise the answer
+# is 403. With OIDC enabled the server refuses to start while this is empty,
+# unless allow_any_authenticated is true.
 required_entitlements = []
+# true lets in everyone the issuer can authenticate (with the Helmholtz AAI:
+# every member of every connected institution). Only set this on purpose.
+allow_any_authenticated = false
 jwks_cache_seconds = 3600
 userinfo_cache_seconds = 300
 timeout_seconds = 10.0

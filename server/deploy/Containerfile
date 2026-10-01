@@ -5,20 +5,34 @@
 # Run:
 #   podman run --rm -p 8080:8080 \
 #     -v /etc/slurm-monitor:/etc/slurm-monitor:ro \
+#     -v /run/slurm-monitor:/run/slurm-monitor:ro \
 #     -e SLURM_MONITOR_CONFIG=/etc/slurm-monitor/config.toml \
 #     slurm-monitor-server
+# The process runs with uid and gid 10001; the Slurm token file must be
+# readable by that uid (see README, "Token rotation").
 # Try without a cluster:
 #   podman run --rm -p 8080:8080 slurm-monitor-server --demo
+#
+# Dependencies are installed exactly as recorded in uv.lock (--frozen): the
+# image holds the versions the tests ran with.
 
 FROM docker.io/library/python:3.12-slim AS build
+COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /usr/local/bin/uv
+ENV UV_PROJECT_ENVIRONMENT=/opt/slurm-monitor/venv \
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never
 WORKDIR /build
-COPY pyproject.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
-RUN pip install --no-cache-dir --prefix=/install .
+RUN uv sync --frozen --no-dev --no-editable
 
 FROM docker.io/library/python:3.12-slim
-COPY --from=build /install /usr/local
-RUN useradd --system --no-create-home --shell /usr/sbin/nologin slurm-monitor
-USER slurm-monitor
+COPY --from=build /opt/slurm-monitor/venv /opt/slurm-monitor/venv
+ENV PATH=/opt/slurm-monitor/venv/bin:$PATH
+RUN groupadd --system --gid 10001 slurm-monitor \
+    && useradd --system --uid 10001 --gid 10001 --no-create-home \
+       --shell /usr/sbin/nologin slurm-monitor
+USER 10001:10001
 EXPOSE 8080
 ENTRYPOINT ["slurm-monitor-server", "--host", "0.0.0.0", "--port", "8080"]

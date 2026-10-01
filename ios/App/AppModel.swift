@@ -100,20 +100,24 @@ final class AppModel: ObservableObject {
 
     // MARK: Settings
 
-    /// Stores new settings, if they differ, and tells the widgets.
+    /// Stores new settings, if they differ, and tells the widgets. A changed
+    /// server address also removes the stored sign-in: a token or a
+    /// Helmholtz AAI sign-in belongs to one server and must not be sent to
+    /// another.
     func applySettings(_ newSettings: ServerSettings) {
         guard newSettings != settings else { return }
         let serverChanged = newSettings.serverURL != settings.serverURL
         settings = newSettings
         newSettings.save()
         if serverChanged {
+            let cleared: Bool = (try? credentialStore.clear()) != nil
             // Cached snapshots and partition names belong to the old server.
             FileSnapshotCache().removeAll()
             setKnownPartitions([])
             authConfigState = .unknown
-            signInStatus = .unknown
+            signInStatus = cleared ? .signedOut : .unknown
             serverHealth = nil
-            signInMessage = nil
+            signInMessage = cleared ? nil : "The sign-in for the previous server could not be removed. Sign out before using this server."
         }
         settingsOrCredentialsDidChange()
     }

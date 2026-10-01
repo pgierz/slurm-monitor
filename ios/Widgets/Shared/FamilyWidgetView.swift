@@ -9,7 +9,15 @@ import WidgetKit
 /// deep link into the app. The `live` closure draws only the body below the
 /// header; its second argument is true when the snapshot is stale and is to
 /// be passed on as `dimmed`.
+///
+/// It also reads the widget rendering mode. In any mode but full colour
+/// (tinted Home Screen, StandBy at night) it sets `\.reducedColour` for
+/// everything inside, and the components draw by opacity instead of hue.
 struct FamilyWidgetView<T, Live: View>: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    /// Set from outside by the screenshot tests to force the reduced style.
+    @Environment(\.reducedColour) private var reducedColourForced
+
     let kind: WidgetFamilyKind
     let size: WidgetLayoutSize
     let content: WidgetContent<T>
@@ -28,7 +36,7 @@ struct FamilyWidgetView<T, Live: View>: View {
         content: WidgetContent<T>,
         title: String,
         liveTitle: ((T) -> String)? = nil,
-        timeZone: TimeZone = TimeZone.current,
+        timeZone: TimeZone = TimeZone.autoupdatingCurrent,
         lastSeen: @escaping (T) -> String,
         @ViewBuilder live: @escaping (T, Bool) -> Live
     ) {
@@ -48,11 +56,16 @@ struct FamilyWidgetView<T, Live: View>: View {
             stateBody
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .environment(\.reducedColour, usesReducedColour)
         .environment(\.colorScheme, .dark)
         .containerBackground(for: .widget) {
             Theme.background
         }
         .widgetURL(WidgetLinks.family(kind))
+    }
+
+    private var usesReducedColour: Bool {
+        reducedColourForced || renderingMode != WidgetRenderingMode.fullColor
     }
 
     private var header: some View {
@@ -108,6 +121,11 @@ struct FamilyWidgetView<T, Live: View>: View {
         case .live(_, let date):
             return Format.clockTime(date, timeZone: timeZone)
         case .stale(_, let date):
+            // A small widget has no room for "as of" beside its title; the
+            // amber time alone says it.
+            if size == .small {
+                return Format.clockTime(date, timeZone: timeZone)
+            }
             return Format.asOf(date, timeZone: timeZone)
         case .vpnNeeded(_, let date):
             guard let date = date else { return Format.dash }

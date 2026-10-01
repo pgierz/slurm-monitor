@@ -94,7 +94,7 @@ struct LockCircularView: View {
 /// when there is no data.
 struct LockRectangularView: View {
     let queue: WidgetContent<QueueData>
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         lines
@@ -109,11 +109,11 @@ struct LockRectangularView: View {
         case .stale(let data, _):
             dataLines(data)
         case .vpnNeeded(let last, _):
-            LockMessageLines(symbol: "shield.slash", title: "VPN needed", detail: lastSeenText(last))
+            LockMessageLines(symbol: StateSymbols.vpnNeeded, title: "VPN needed", detail: lastSeenText(last))
         case .signInNeeded:
-            LockMessageLines(symbol: "key", title: "Sign in needed", detail: "Open the app")
+            LockMessageLines(symbol: StateSymbols.signInNeeded, title: "Sign in needed", detail: "Open the app")
         case .notConfigured:
-            LockMessageLines(symbol: "gearshape", title: "Not configured", detail: "Open the app")
+            LockMessageLines(symbol: StateSymbols.notConfigured, title: "Not configured", detail: "Open the app")
         }
     }
 

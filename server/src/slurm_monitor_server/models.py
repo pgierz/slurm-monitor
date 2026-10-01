@@ -20,6 +20,8 @@ class Health(ContractModel):
     schema_version: int
     last_poll_at: str | None
     last_poll_ok: bool
+    # The slurmrestd data-parser version in use; null until it is known.
+    slurm_api_version: str | None = None
 
 
 class OidcClientConfig(ContractModel):

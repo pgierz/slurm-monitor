@@ -41,11 +41,18 @@ ENDPOINTS = [
 ]
 
 USER_KEYS = {"user_name", "user", "username", "owner", "users", "allow_users",
-             "deny_users", "coordinators"}
+             "deny_users", "coordinators", "reason_set_by_user"}
 ACCOUNT_KEYS = {"account", "accounts", "parent", "parent_account",
                 "allow_accounts", "deny_accounts", "default_account"}
 GROUP_KEYS = {"group_name", "group", "groups", "allow_groups", "deny_groups"}
 COMMENT_KEYS = {"comment", "admin_comment", "system_comment"}
+# Free text written by administrators (the reason a node is down or drained,
+# the description of a QOS): replaced as a whole, like a comment. The job
+# field "state_reason" is a fixed Slurm word and is kept (see KEEP_KEYS).
+TEXT_KEYS = {"reason", "description"}
+# Reservation names are chosen by people and often name a person or a
+# project ("pgierz_workshop"): hashed, also inside comma-separated lists.
+RESERVATION_KEYS = {"reservation", "reservations", "resv_name"}
 PATH_KEYS = {"current_working_directory", "cwd", "work_dir",
              "working_directory", "standard_output", "standard_error",
              "standard_input", "stdout", "stderr", "stdin", "container"}
@@ -63,7 +70,7 @@ KEEP_KEYS = {"partition", "partitions", "qos", "nodes", "node", "hostname",
              "state_reason", "flags", "features", "active_features",
              "architecture", "operating_system", "version", "type",
              "scheduled_nodes", "required_nodes", "excluded_nodes",
-             "licenses", "reservation", "dependency", "release"}
+             "licenses", "dependency", "release"}
 NEVER_RENAMED = {"", "root", "nobody", "(null)", "ALL", "all"}
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
@@ -142,6 +149,9 @@ class Anonymiser(object):
     def comment(self, text):
         return "c-" + self._digest(text, 10) if text else text
 
+    def reservation(self, name):
+        return "resv-" + self._digest(name, 8) if name else name
+
     def opaque(self, text):
         return "x-" + self._digest(text, 10) if text else text
 
@@ -213,6 +223,10 @@ class Anonymiser(object):
         keys = set(k.lower() for k in path)
         if keys & COMMENT_KEYS:
             return self.comment(text)
+        if key in TEXT_KEYS:
+            return self.comment(text)
+        if key in RESERVATION_KEYS:
+            return self._name_list(text, self.reservation)
         if key == "name":
             return self._name(text, parent, collecting)
         if key in ACCOUNT_KEYS or "accounts" in keys:
@@ -254,17 +268,19 @@ class Anonymiser(object):
     def residue(self, payload):
         """Return (key path, original name) pairs for names that still occur.
 
-        A hit is not always a leak: an account called like a partition will
-        be reported because the partition name is kept on purpose.
+        A plain search, ignoring case, for every original user, account and
+        group name longer than two characters, anywhere inside any string:
+        "pgierz" is found in "pgierz_workshop" and in "/home/PGierz". A hit
+        is not always a leak: an account called like a partition will be
+        reported because the partition name is kept on purpose, and a short
+        name may occur inside an unrelated word.
         """
         names = set(self.users) | set(self.accounts) | set(self.groups)
-        names = sorted(n for n in names if len(n) > 1)
+        names = sorted(set(n.lower() for n in names if len(n) > 2))
         hits = []
-        if names:
-            name_re = re.compile(r"(?<![A-Za-z0-9_])(%s)(?![A-Za-z0-9_])"
-                                 % "|".join(re.escape(n) for n in names))
-        else:
-            name_re = None
+        # One pass with a combined expression tells whether a string holds
+        # any name at all; only then is every name looked for by itself.
+        any_name = re.compile("|".join(re.escape(n) for n in names)) if names else None
 
         def visit(value, path):
             if isinstance(value, dict):
@@ -274,7 +290,10 @@ class Anonymiser(object):
                 for v in value:
                     visit(v, path)
             elif isinstance(value, str):
-                found = set(name_re.findall(value)) if name_re else set()
+                found = set()
+                low = value.lower()
+                if any_name is not None and any_name.search(low):
+                    found.update(n for n in names if n in low)
                 for mail in EMAIL_RE.findall(value):
                     if not mail.endswith("@example.org") and \
                             mail.split("@")[0] not in self.keep_users:

@@ -79,6 +79,7 @@ async def test_health_auth_config_and_me_with_static_token():
         assert (await client.get("/api/v1/health")).json() == {
             "status": "ok", "version": "1.0.0", "schema_version": 1,
             "last_poll_at": "2026-10-01T12:32:07Z", "last_poll_ok": True,
+            "slurm_api_version": "v0.0.40",
         }  # fmt: skip
         assert (await client.get("/api/v1/auth/config")).json() == {
             "methods": ["token"], "oidc": None,
@@ -240,6 +241,7 @@ async def test_slurmrestd_requests_and_wrong_slurm_token():
     ]
     wrong = Harness(settings=make_settings(slurm={
         "base_url": "https://slurm.example.org:6820", "user_name": "monitor", "token": "expired",
+        "api_version": "v0.0.40",
     }))  # fmt: skip
     assert not await wrong.poll()
 
@@ -303,7 +305,7 @@ async def test_prometheus_endpoint_is_off_by_default_and_small_when_on():
     assert response.headers["content-type"].startswith("text/plain")
     text = response.text
     assert "slurm_monitor_last_poll_ok 1" in text
-    assert 'slurm_monitor_nodes{state="down"} 4' in text
+    assert 'slurm_monitor_nodes{state="down"} 3' in text
     assert "slurm_monitor_gpu_cards 24" in text
     assert 'slurm_monitor_jobs{state="running"}' in text
 
@@ -336,7 +338,7 @@ async def test_slurm_token_file_is_read_on_every_poll(tmp_path):
     })  # fmt: skip
     harness = Harness(settings=settings)
     assert not await harness.poll()  # the mock wants another token
-    token_file.write_text(SLURM_TOKEN + "\n")  # the cron job rotates the file
+    token_file.write_text(SLURM_TOKEN + "\n")  # the timer rotates the file
     assert await harness.poll()
     token_file.unlink()
     assert not await harness.poll()

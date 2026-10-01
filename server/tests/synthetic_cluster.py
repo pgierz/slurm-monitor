@@ -53,17 +53,39 @@ class MockSlurmrestd:
         self.form: Form = form
         self.failing = False
         self.requests: list[str] = []
+        # Where the OpenAPI document is served, and the versions it names
+        # besides the one of this form.
+        self.openapi_path = "/openapi/v3"
+        self.older_versions = ["v0.0.37"]
+        # Paths answered with HTTP 200 and a non-empty "errors" array.
+        self.reporting_errors: set[str] = set()
+        # Paths answered with HTTP 500 while everything else works.
+        self.failing_paths: set[str] = set()
+        # Optional replacement of the payload of a path: path → function of the payload.
+        self.rewrite: dict[str, Any] = {}
+
+    def version(self) -> str:
+        return API_VERSIONS[self.form]
+
+    def openapi(self) -> dict[str, Any]:
+        paths: dict[str, Any] = {self.openapi_path: {}}
+        for version in [*self.older_versions, self.version()]:
+            for plugin, resource in (("slurm", "jobs"), ("slurm", "nodes"), ("slurmdb", "qos")):
+                paths[f"/{plugin}/{version}/{resource}"] = {}
+        return {"openapi": "3.0.3", "paths": paths}
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request.url.path)
-        if self.failing:
+        if self.failing or request.url.path in self.failing_paths:
             return httpx.Response(500, json={"errors": [{"error": "slurmctld unreachable"}]})
         if (
             request.headers.get("X-SLURM-USER-NAME") != SLURM_USER
             or request.headers.get("X-SLURM-USER-TOKEN") != SLURM_TOKEN
         ):
             return httpx.Response(401, json={"errors": [{"error": "Authentication failure"}]})
-        version = API_VERSIONS[self.form]
+        if request.url.path == self.openapi_path:
+            return httpx.Response(200, json=self.openapi())
+        version = self.version()
         now = int(self.clock())
         routes = {
             f"/slurm/{version}/jobs": CLUSTER.jobs_payload,
@@ -76,7 +98,12 @@ class MockSlurmrestd:
         if build is None:
             return httpx.Response(404, json={"errors": [{"error": "not found"}]})
         try:
-            return httpx.Response(200, json=build(now, self.form))
+            payload = build(now, self.form)
+            if request.url.path in self.reporting_errors:
+                payload = {**payload, "errors": [{"error": "slurmdbd: connection refused"}]}
+            if request.url.path in self.rewrite:
+                payload = self.rewrite[request.url.path](payload)
+            return httpx.Response(200, json=payload)
         except SlurmSourceError:
             return httpx.Response(404, json={"errors": [{"error": "not found"}]})
 

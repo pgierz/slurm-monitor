@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
@@ -20,13 +21,29 @@ from .slurm_parsing import (
     parse_tres_count,
 )
 
-DOWN_FLAGS = {"DOWN", "FAIL", "NOT_RESPONDING", "POWERED_DOWN", "UNKNOWN"}
-DRAINED_FLAGS = {"DRAIN", "DRAINING", "DRAINED", "MAINT", "RESERVED"}
+logger = logging.getLogger(__name__)
+
+# slurmrestd gives a base state plus flags. It spells the maintenance flag
+# MAINTENANCE and never emits DRAINING or DRAINED (those are sinfo's words for
+# base state plus DRAIN); the sinfo spellings are accepted all the same.
+DOWN_FLAGS = {"DOWN", "FAIL", "NOT_RESPONDING", "ERROR", "INVALID_REG", "UNKNOWN"}
+DRAINED_FLAGS = {"DRAIN", "MAINTENANCE", "MAINT", "DRAINING", "DRAINED"}
 ALLOCATED_FLAGS = {"ALLOCATED", "MIXED", "COMPLETING"}
+# A node that only exists as a FUTURE definition is not part of the cluster.
+OMITTED_FLAG = "FUTURE"
+# More cards than this on one node is a misread GRES string, not hardware.
+MAX_CARDS_PER_NODE = 64
+# A time limit beyond ten years is a sentinel or garbage: reported as unknown.
+MAX_TIME_LIMIT_MINUTES = 10 * 366 * 24 * 60
 
 
 def map_node_state(flags: list[str]) -> str:
-    """Contract node state from Slurm state flags; 'down' is checked first."""
+    """Contract node state from Slurm state flags, in the contract's order.
+
+    Everything not named counts as idle; that includes POWERED_DOWN,
+    POWERING_UP, POWERING_DOWN, REBOOT_ISSUED, CLOUD and PLANNED, because
+    with power saving such nodes are available to the scheduler.
+    """
     present = set(flags)
     if present & DOWN_FLAGS:
         return "down"
@@ -34,6 +51,9 @@ def map_node_state(flags: list[str]) -> str:
         return "drained"
     if present & ALLOCATED_FLAGS:
         return "allocated"
+    if "RESERVED" in present:
+        # An idle node held by a reservation is not available.
+        return "drained"
     return "idle"
 
 
@@ -93,7 +113,11 @@ def _job_gpus(
                     count += entry.count
                     gpu_type = gpu_type or entry.type
                     if entry.indices and len(hosts) == len(per_node):
-                        cards.extend((hosts[position], index) for index in entry.indices)
+                        cards.extend(
+                            (hosts[position], index)
+                            for index in entry.indices
+                            if index < MAX_CARDS_PER_NODE
+                        )
         if count == 0:
             count = parse_tres_count(job.get("tres_alloc_str"), f"gres/{gres_name}") or 0
             gpu_type = gpu_type or _gpu_type_from_tres(job.get("tres_alloc_str"), gres_name)
@@ -136,7 +160,11 @@ def reduce_job(
     name = parse_text(job.get("name"))
     user = parse_text(job.get("user_name")) or parse_text(job.get("user_id"))
     limit = parse_number(job.get("time_limit"))  # minutes
-    time_limit = int(limit.value * 60) if limit.is_set and limit.value is not None else None
+    time_limit = (
+        int(limit.value * 60)
+        if limit.is_set and limit.value is not None and 0 <= limit.value <= MAX_TIME_LIMIT_MINUTES
+        else None
+    )
     node_count = parse_int(job.get("node_count")) or 0
     cpus = parse_int(job.get("cpus")) or 0
     gpu_count, gpu_type, gpu_cards = _job_gpus(job, state, node_count, gres_name)
@@ -180,6 +208,24 @@ def reduce_jobs(
     return tuple(record for record in records if record is not None)
 
 
+def jobs_without_user_name(payload: dict[str, Any]) -> int:
+    """How many running or pending jobs carry an empty ``user_name``.
+
+    slurmrestd leaves the name empty when it cannot resolve a uid; such jobs
+    are then never counted as anybody's own.
+    """
+    jobs = payload.get("jobs")
+    if not isinstance(jobs, list):
+        return 0
+    count = 0
+    for job in jobs:
+        if not isinstance(job, dict) or parse_text(job.get("user_name")):
+            continue
+        flags = parse_state_flags(job.get("job_state"))
+        count += int("RUNNING" in flags or "PENDING" in flags)
+    return count
+
+
 def partition_membership(payload: dict[str, Any] | None) -> dict[str, list[str]]:
     """Node name → partition names, from the partitions endpoint.
 
@@ -208,7 +254,10 @@ def reduce_node(
     if not name:
         return None
     # Older payloads: "state": "idle", "state_flags": ["DRAIN"]. Newer: a list.
-    state = map_node_state(parse_state_flags(node.get("state"), node.get("state_flags")))
+    flags = parse_state_flags(node.get("state"), node.get("state_flags"))
+    if OMITTED_FLAG in flags:
+        return None
+    state = map_node_state(flags)
 
     raw_partitions = node.get("partitions")
     if isinstance(raw_partitions, str):
@@ -222,7 +271,10 @@ def reduce_node(
 
     gpu_types: list[str] = []
     for entry in _gpu_entries(node.get("gres"), gres_name):
-        gpu_types.extend([entry.type or gres_name] * entry.count)
+        room = MAX_CARDS_PER_NODE - len(gpu_types)
+        if entry.count > room:
+            logger.debug("node %s: GRES card count capped at %d", name, MAX_CARDS_PER_NODE)
+        gpu_types.extend([entry.type or gres_name] * max(0, min(entry.count, room)))
 
     allocated: set[int] = set()
     for entry in _gpu_entries(node.get("gres_used"), gres_name):

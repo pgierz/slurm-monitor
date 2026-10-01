@@ -58,7 +58,8 @@ extension WidgetContent: Equatable where T: Equatable {}
 ///
 /// - Success: the snapshot is cached; the result is `.live`, or `.stale` when
 ///   the envelope says so or the snapshot is older than ten minutes.
-/// - `.unreachable`, `.noData`: `.vpnNeeded` with the cached snapshot, if any.
+/// - `.unreachable`, `.noData`, `.credentialStore`: `.vpnNeeded` with the
+///   cached snapshot, if any.
 /// - `.unauthorized`, `.noCredentials`: `.signInNeeded`.
 /// - `.notConfigured`: `.notConfigured`.
 /// - `.decoding`: `.stale` with the cached snapshot if there is one,
@@ -77,6 +78,13 @@ public struct SnapshotLoader: Sendable {
     /// A loader with the stored settings, the keychain, `URLSession` and the file cache.
     public static func live() -> SnapshotLoader {
         SnapshotLoader(client: SlurmClient.live(), cache: FileSnapshotCache())
+    }
+
+    /// A loader that never asks the server: every family answers
+    /// `.vpnNeeded` with the cached snapshot, if there is one. For a
+    /// timeline that ran out of time, and for the widget gallery.
+    public func cachedOnly() -> SnapshotLoader {
+        SnapshotLoader(client: CacheOnlyFetcher(settings: client.settings), cache: cache, now: now)
     }
 
     /// Queue snapshot; cached per server, partition, user and QOS.
@@ -139,7 +147,7 @@ public struct SnapshotLoader: Sendable {
             return .signInNeeded
         case .notConfigured:
             return .notConfigured
-        case .unreachable, .noData:
+        case .unreachable, .noData, .credentialStore:
             let cached: Snapshot<T>? = cachedSnapshot(key: key)
             return .vpnNeeded(last: cached?.data, generatedAt: cached?.generatedAt)
         case .decoding:
@@ -168,5 +176,31 @@ public struct SnapshotLoader: Sendable {
     /// True when the envelope is marked stale or is older than ten minutes.
     public static func isStale<T: Codable & Sendable & Equatable>(_ snapshot: Snapshot<T>, now: Date) -> Bool {
         snapshot.stale || now.timeIntervalSince(snapshot.generatedAt) > SlurmKitConstants.staleAfter
+    }
+}
+
+/// Answers every fetch with `.unreachable`, so that a loader built on it
+/// serves from its cache alone.
+struct CacheOnlyFetcher: SlurmFetching {
+    let settings: ServerSettings
+
+    func queue(partition: String?, user: UserScope, qos: String?) async throws -> Snapshot<QueueData> {
+        throw FetchError.unreachable
+    }
+
+    func nodes(partition: String?) async throws -> Snapshot<NodesData> {
+        throw FetchError.unreachable
+    }
+
+    func qos(user: UserScope) async throws -> Snapshot<QosData> {
+        throw FetchError.unreachable
+    }
+
+    func gpu() async throws -> Snapshot<GpuData> {
+        throw FetchError.unreachable
+    }
+
+    func runners(user: UserScope) async throws -> Snapshot<RunnersData> {
+        throw FetchError.unreachable
     }
 }

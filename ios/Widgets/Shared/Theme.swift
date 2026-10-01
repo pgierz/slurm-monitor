@@ -45,6 +45,63 @@ enum Theme {
         dimmed ? staleFigure : colour
     }
 
+    // MARK: Reduced colour
+    //
+    // In the tinted Home Screen and in StandBy at night the system removes
+    // the background and flattens every colour to one tint, keeping only
+    // its opacity. There the states are told apart by opacity steps and by
+    // outline against fill, not by hue, and nothing opaque lies under text.
+
+    /// `colour` in full colour. In reduced colour the primary text colour,
+    /// at half opacity when `dimmed`, as hue carries no meaning there.
+    static func figure(_ colour: Color, dimmed: Bool, reduced: Bool) -> Color {
+        if reduced {
+            return primaryText.opacity(dimmed ? reducedStaleFactor : 1.0)
+        }
+        return figure(colour, dimmed: dimmed)
+    }
+
+    /// Secondary text: labels and captions.
+    static func secondary(reduced: Bool) -> Color {
+        reduced ? primaryText.opacity(0.6) : secondaryText
+    }
+
+    /// The track of bars and rings.
+    static func trackColour(reduced: Bool) -> Color {
+        reduced ? primaryText.opacity(0.12) : track
+    }
+
+    static func hairlineColour(reduced: Bool) -> Color {
+        reduced ? primaryText.opacity(0.25) : hairline
+    }
+
+    /// What a stale widget multiplies its opacities by in reduced colour.
+    static let reducedStaleFactor: Double = 0.5
+
+    /// Opacity of a node state in reduced colour: allocated 1.0, idle 0.25,
+    /// drained 0.5, down 1.0. Down is drawn hollow besides, see
+    /// `isHollowWhenReduced`, so that it differs from allocated.
+    static func reducedOpacity(for state: NodeState, dimmed: Bool = false) -> Double {
+        let opacity: Double
+        switch state {
+        case .allocated: opacity = 1.0
+        case .idle, .unknown: opacity = 0.25
+        case .drained: opacity = 0.5
+        case .down: opacity = 1.0
+        }
+        return dimmed ? opacity * reducedStaleFactor : opacity
+    }
+
+    /// True for the state drawn as an outline in reduced colour.
+    static func isHollowWhenReduced(_ state: NodeState) -> Bool {
+        state == .down
+    }
+
+    /// The colour of a node state in reduced colour.
+    static func reducedColour(for state: NodeState, dimmed: Bool = false) -> Color {
+        primaryText.opacity(reducedOpacity(for: state, dimmed: dimmed))
+    }
+
     /// Segment colour of a node state in rings, stacked bars and legends.
     static func colour(for state: NodeState) -> Color {
         switch state {
@@ -90,6 +147,21 @@ enum Theme {
         static let figureLabel: CGFloat = 1
         static let hairlineHeight: CGFloat = 0.5
         static let barHeight: CGFloat = 6
+    }
+}
+
+private struct ReducedColourKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+extension EnvironmentValues {
+    /// True when the widget is drawn without its own colours (tinted Home
+    /// Screen, StandBy at night). `FamilyWidgetView` sets it from the
+    /// widget rendering mode; the components read it. A test sets it from
+    /// outside to see the reduced style.
+    var reducedColour: Bool {
+        get { self[ReducedColourKey.self] }
+        set { self[ReducedColourKey.self] = newValue }
     }
 }
 

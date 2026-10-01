@@ -7,6 +7,7 @@ struct QosMediumView: View {
 
     let data: QosData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -16,13 +17,27 @@ struct QosMediumView: View {
                 rows
             }
             Spacer(minLength: 0)
-            FooterRow(left: "fairshare · my account", right: Format.fairshare(data.fairshare), dimmed: isStale)
+            FooterRow(left: footerText, right: Format.fairshare(data.fairshare), dimmed: isStale)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var shownEntries: [QosEntry] {
         Array(data.qos.prefix(QosMediumView.maxRows))
+    }
+
+    /// The footer label; it says how many QOS are left out when there are
+    /// more than fit, as the medium widget has no room for a line of its own.
+    static func footerLabel(total: Int) -> String {
+        let more: Int = total - maxRows
+        if more > 0 {
+            return "and \(more) more · fairshare"
+        }
+        return "fairshare · my account"
+    }
+
+    private var footerText: String {
+        QosMediumView.footerLabel(total: data.qos.count)
     }
 
     private var rows: some View {
@@ -37,7 +52,7 @@ struct QosMediumView: View {
     private var emptyMessage: some View {
         Text("No QOS in use")
             .font(Theme.footerFont)
-            .foregroundStyle(Theme.secondaryText)
+            .foregroundStyle(Theme.secondary(reduced: reduced))
     }
 }
 
@@ -49,6 +64,7 @@ struct QosRow: View {
 
     let entry: QosEntry
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         if let fraction = entry.usedFraction {
@@ -76,13 +92,13 @@ struct QosRow: View {
                 .minimumScaleFactor(0.8)
                 .frame(width: QosRow.labelWidth, alignment: .leading)
             Capsule()
-                .fill(Theme.track)
+                .fill(Theme.trackColour(reduced: reduced))
                 .frame(height: 2)
                 .frame(maxWidth: .infinity)
                 .frame(height: Theme.Spacing.barHeight)
             Text(Format.compactCount(entry.cpusInUse))
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(width: QosRow.valueWidth, alignment: .trailing)

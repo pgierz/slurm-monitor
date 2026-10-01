@@ -17,6 +17,7 @@ struct DaskMediumView: View {
 
     let data: RunnersData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -25,7 +26,7 @@ struct DaskMediumView: View {
             } else {
                 table
                 Spacer(minLength: 0)
-                FooterRow(left: "dot: scheduler alive", right: moreText, rightColour: Theme.secondaryText, dimmed: isStale)
+                FooterRow(left: reduced ? "filled dot: scheduler alive" : "dot: scheduler alive", right: moreText, rightColour: Theme.secondaryText, dimmed: isStale)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -43,7 +44,7 @@ struct DaskMediumView: View {
     private var emptyMessage: some View {
         Text("No clusters running")
             .font(Theme.footerFont)
-            .foregroundStyle(Theme.secondaryText)
+            .foregroundStyle(Theme.secondary(reduced: reduced))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 
@@ -73,6 +74,7 @@ struct DaskMediumView: View {
 struct DaskClusterRow: View {
     let cluster: DaskCluster
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
@@ -89,6 +91,22 @@ struct DaskClusterRow: View {
         cluster.schedulerAlive ? Theme.running : Theme.down
     }
 
+    /// In reduced colour a dead scheduler is a hollow dot, as blue and
+    /// light red can no longer be told apart.
+    private var dotFill: Color {
+        if reduced && !cluster.schedulerAlive {
+            return Color.clear
+        }
+        return Theme.figure(dotColour, dimmed: isStale, reduced: reduced)
+    }
+
+    private var dotOutline: Color {
+        if reduced && !cluster.schedulerAlive {
+            return Theme.figure(dotColour, dimmed: isStale, reduced: reduced)
+        }
+        return Color.clear
+    }
+
     private var timeColour: Color {
         cluster.isNearWalltime ? Theme.pending : Theme.primaryText
     }
@@ -96,11 +114,12 @@ struct DaskClusterRow: View {
     private var nameColumn: some View {
         HStack(alignment: .center, spacing: DaskColumns.dotGap) {
             Circle()
-                .fill(Theme.figure(dotColour, dimmed: isStale))
+                .fill(dotFill)
                 .frame(width: DaskColumns.dotSize, height: DaskColumns.dotSize)
+                .overlay(Circle().strokeBorder(dotOutline, lineWidth: 1))
             Text(cluster.label)
                 .font(Theme.figureFont(size: 11, weight: .medium))
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -109,7 +128,7 @@ struct DaskClusterRow: View {
     private func figure(_ text: String, colour: Color) -> some View {
         Text(text)
             .font(Theme.footerValueFont)
-            .foregroundStyle(Theme.figure(colour, dimmed: isStale))
+            .foregroundStyle(Theme.figure(colour, dimmed: isStale, reduced: reduced))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
     }
@@ -119,7 +138,7 @@ struct DaskClusterRow: View {
 /// The screenshot tests construct this directly.
 struct DaskFamilyView: View {
     let content: WidgetContent<RunnersData>
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(

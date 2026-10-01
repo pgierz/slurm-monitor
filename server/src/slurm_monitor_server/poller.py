@@ -5,16 +5,37 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from .config import Settings
 from .gpu_metrics import GpuMetricsSource
 from .history import HistoryPoint, HistoryStore
-from .records import ClusterState, GpuMetrics
-from .reduce import RunnerClassifier, reduce_jobs, reduce_nodes, reduce_qos, reduce_shares
+from .records import ClusterState, GpuMetrics, JobRecord, QosRecord, ShareRecord
+from .reduce import (
+    RunnerClassifier,
+    jobs_without_user_name,
+    reduce_jobs,
+    reduce_nodes,
+    reduce_qos,
+    reduce_shares,
+)
 from .slurmrestd import SlurmSource
 
 logger = logging.getLogger(__name__)
+
+MAX_BACKOFF_SECONDS = 300.0
+
+
+def poll_delay(interval: float, consecutive_failures: int) -> float:
+    """Seconds between two polls: the interval, doubled per failure in a row.
+
+    The doubling stops at five minutes (or at the interval, if that is longer).
+    """
+    if consecutive_failures <= 0:
+        return interval
+    doubled = interval * 2 ** min(consecutive_failures, 16)
+    return max(interval, min(doubled, MAX_BACKOFF_SECONDS))
 
 
 class SnapshotStore:
@@ -49,7 +70,11 @@ class SnapshotStore:
 
 
 class Poller:
-    """Polls the Slurm source at a fixed interval in a background task."""
+    """Polls the Slurm source in a background task.
+
+    The interval is fixed while polls succeed and doubles, up to five
+    minutes, while they fail.
+    """
 
     def __init__(
         self,
@@ -66,6 +91,13 @@ class Poller:
         self._clock = clock
         self._classifier = RunnerClassifier(settings.runners)
         self._task: asyncio.Task[None] | None = None
+        self.consecutive_failures = 0
+        # Whether each optional payload came through last time; None before
+        # the first attempt. A change is logged once, not on every poll.
+        self._optional_ok: dict[str, bool | None] = {}
+        self._last_qos: tuple[QosRecord, ...] = ()
+        self._last_shares: tuple[ShareRecord, ...] = ()
+        self._warned_empty_user_name = False
 
     async def poll_once(self) -> bool:
         """One poll; True when a new state was stored."""
@@ -75,22 +107,40 @@ class Poller:
         except Exception as error:  # noqa: BLE001 - any failure must leave the old state
             logger.warning("poll failed: %s: %s", type(error).__name__, error)
             self._store.reject(now)
+            self.consecutive_failures += 1
             return False
         self._store.accept(state)
+        self.consecutive_failures = 0
         return True
+
+    def _reduce_jobs(self, payload: dict[str, Any]) -> tuple[tuple[JobRecord, ...], int]:
+        gres_name = self._settings.gpu.gres_name
+        return reduce_jobs(payload, self._classifier, gres_name), jobs_without_user_name(payload)
 
     async def _collect(self, now: int) -> ClusterState:
         gres_name = self._settings.gpu.gres_name
-        # The jobs payload is by far the largest; it is reduced inside this
-        # expression and nothing else keeps a reference to it.
-        jobs = reduce_jobs(await self._source.fetch_jobs(), self._classifier, gres_name)
+        # Reduction runs in a worker thread, like the JSON parsing before it:
+        # the jobs payload of a large cluster keeps a core busy for a while,
+        # and API requests must be answered meanwhile. The payload is by far
+        # the largest; nothing keeps a reference to it past this statement.
+        jobs, nameless = await asyncio.to_thread(self._reduce_jobs, await self._source.fetch_jobs())
+        self._note_empty_user_names(nameless)
 
         partitions_payload = await self._optional(self._source.fetch_partitions, "partitions")
-        nodes = reduce_nodes(await self._source.fetch_nodes(), partitions_payload, gres_name)
+        nodes = await asyncio.to_thread(
+            reduce_nodes, await self._source.fetch_nodes(), partitions_payload, gres_name
+        )
         del partitions_payload
 
-        qos = reduce_qos(await self._optional(self._source.fetch_qos, "qos"))
-        shares = reduce_shares(await self._optional(self._source.fetch_shares, "shares"))
+        # Without a fresh answer the last good QOS limits and shares are kept:
+        # they change rarely, and a slurmdbd hiccup should not blank them.
+        qos_payload = await self._optional(self._source.fetch_qos, "qos")
+        if qos_payload is not None:
+            self._last_qos = await asyncio.to_thread(reduce_qos, qos_payload)
+        shares_payload = await self._optional(self._source.fetch_shares, "shares")
+        if shares_payload is not None:
+            self._last_shares = await asyncio.to_thread(reduce_shares, shares_payload)
+        del qos_payload, shares_payload
 
         metrics_available = False
         gpu_metrics: GpuMetrics = {}
@@ -106,27 +156,47 @@ class Poller:
             polled_at=now,
             jobs=jobs,
             nodes=nodes,
-            qos=qos,
-            shares=shares,
+            qos=self._last_qos,
+            shares=self._last_shares,
             metrics_available=metrics_available,
             gpu_metrics=gpu_metrics,
         )
 
-    @staticmethod
-    async def _optional(fetch, what: str):  # type: ignore[no-untyped-def]
+    def _note_empty_user_names(self, count: int) -> None:
+        if count and not self._warned_empty_user_name:
+            logger.warning(
+                "%d running or pending jobs carry an empty user_name; they are counted for "
+                "the cluster but never as anybody's own (slurmrestd could not resolve the "
+                "user ids)",
+                count,
+            )
+        self._warned_empty_user_name = bool(count)
+
+    async def _optional(
+        self, fetch: Callable[[], Awaitable[dict[str, Any]]], what: str
+    ) -> dict[str, Any] | None:
         """Payloads the server can do without: a failure gives None."""
         try:
-            return await fetch()
+            payload = await fetch()
         except Exception as error:  # noqa: BLE001
-            logger.info("%s not available: %s", what, error)
+            if self._optional_ok.get(what) is not False:
+                logger.warning(
+                    "%s not available, going on with what was last known: %s", what, error
+                )
+            self._optional_ok[what] = False
             return None
+        if self._optional_ok.get(what) is False:
+            logger.info("%s available again", what)
+        self._optional_ok[what] = True
+        return payload
 
     async def run(self) -> None:
         interval = self._settings.poll.interval_seconds
         while True:
             started = time.monotonic()
             await self.poll_once()
-            await asyncio.sleep(max(1.0, interval - (time.monotonic() - started)))
+            delay = poll_delay(interval, self.consecutive_failures)
+            await asyncio.sleep(max(1.0, delay - (time.monotonic() - started)))
 
     def start(self) -> None:
         if self._task is None:

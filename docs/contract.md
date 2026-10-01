@@ -18,7 +18,12 @@ removed field requires a new `schema_version`.
   `503 {"error": "no_data"}` (the server has not yet completed a first poll),
   `503 {"error": "auth_unavailable"}` (the identity provider could not be
   reached to check an OIDC token; the client treats this as unreachable, not
-  as a rejected sign-in).
+  as a rejected sign-in), `422 {"error": "invalid_request"}` (a query
+  parameter the server does not accept, for example one longer than 128
+  characters), `404 {"error": "not_found"}` (no such path),
+  `405 {"error": "method_not_allowed"}`, `500 {"error": "internal_error"}`.
+  Every error answer has this shape; a client decides by the HTTP status and
+  must tolerate codes it does not know.
 
 ### What the client makes of failures
 
@@ -74,8 +79,13 @@ from an older one.
 
 ```json
 {"status": "ok", "version": "1.0.0", "schema_version": 1,
- "last_poll_at": "2026-10-01T12:32:07Z", "last_poll_ok": true}
+ "last_poll_at": "2026-10-01T12:32:07Z", "last_poll_ok": true,
+ "slurm_api_version": "v0.0.41"}
 ```
+
+`slurm_api_version` is the slurmrestd data-parser version the server reads
+with, `null` while it is not yet known. It is information for the person
+running the server; the app does not need it.
 
 ### `GET /api/v1/auth/config`
 
@@ -135,6 +145,8 @@ token).
 
 - `mine` is `null` when no user is known. `my_jobs` is then empty.
 - `state` is `"R"` or `"PD"` only; other job states are not listed.
+- A pending job array counts as one job (Slurm keeps it as one record until
+  its tasks start); every running array task counts as a job of its own.
 - `pending_by_reason` is sorted by count, descending. Reasons are normalised
   to: `Priority`, `Resources`, `QOS limit` (any `QOS*` or `Assoc*` limit
   reason), `Dependency`, `Held` (`JobHeldUser`, `JobHeldAdmin`), `Other`.
@@ -145,7 +157,9 @@ token).
 - `resources`: a short human string, `"16 nodes"`, `"64 cores"` or
   `"2 A100"` for GPU jobs.
 - `time_limit_seconds` is `null` for unlimited.
-- `history`: at most 72 points, one per 5 minutes, oldest first.
+- `history`: at most 72 points, oldest first, at most one point per 5
+  minutes. A 5-minute step without a successful poll has no point, so the
+  series may have gaps; the client must place points by `t`, not by position.
 
 ## Nodes
 
@@ -161,10 +175,21 @@ token).
 ```
 
 - Node `state` is one of `allocated`, `idle`, `drained`, `down`.
-  Mapping from Slurm: `DOWN`, `FAIL`, `NOT_RESPONDING`, `POWERED_DOWN`,
-  `UNKNOWN` → `down` (checked first); `DRAIN`, `DRAINING`, `DRAINED`, `MAINT`,
-  `RESERVED` → `drained`; `ALLOCATED`, `MIXED`, `COMPLETING` → `allocated`;
-  otherwise `idle`.
+  Mapping from the Slurm state (base state plus flags, as slurmrestd gives
+  them), in this order:
+  1. any of `DOWN`, `FAIL`, `NOT_RESPONDING`, `ERROR`, `INVALID_REG`,
+     `UNKNOWN` → `down`;
+  2. else any of `DRAIN`, `MAINTENANCE` (the sinfo spellings `MAINT`,
+     `DRAINING`, `DRAINED` are accepted too) → `drained`;
+  3. else any of `ALLOCATED`, `MIXED`, `COMPLETING` → `allocated`;
+  4. else `RESERVED` → `drained` (an idle node held by a reservation is not
+     available);
+  5. else `idle`. This includes `POWERED_DOWN`, `POWERING_UP`,
+     `POWERING_DOWN`, `REBOOT_ISSUED`, `CLOUD` and `PLANNED`: with power
+     saving such nodes are available.
+
+  Nodes whose state includes `FUTURE` are left out entirely: they appear in
+  no list and no count.
 - Top-level counts are over unique nodes. A node in two partitions appears in
   both partition entries.
 - Partitions are sorted by node count, descending. Nodes are sorted by name.
@@ -227,11 +252,15 @@ token).
   `history[].utilisation` is `null`.
 - `type` is the lower-case GRES type; `label` its display name.
 - Nodes are sorted by type (largest total first), then by name.
-- `longest_wait_seconds` is `0` when no GPU job is pending.
+- `pending_jobs` counts all pending GPU jobs (a pending job array as one).
+  `longest_wait_seconds` is measured from submission to the time of the
+  poll, over the pending GPU jobs that are neither held nor waiting on a
+  dependency; it is `0` when there is no such job.
 - `temperature_c` and `power_w` may be fractional.
 - `top_users`: at most 5, sorted by cards, descending.
-- `history`: at most 72 points, one per 5 minutes, oldest first.
-  `utilisation` is the mean over allocated cards.
+- `history`: at most 72 points, oldest first, at most one point per 5
+  minutes; it may have gaps after failed polls, as in Queue. `utilisation`
+  is the mean over allocated cards.
 
 ## Runners
 

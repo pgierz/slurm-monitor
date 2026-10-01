@@ -35,6 +35,12 @@ final class RunnersSnapshotTests: XCTestCase {
         XCTAssertNotNil(data)
     }
 
+    func testJupyterHubSmall148() {
+        let view = JupyterHubFamilyView(content: live, timeZone: timeZone)
+        let data: Data? = WidgetSnapshotter.snapshot(view, size: .small148, named: "jupyterhub-small-148", in: self)
+        XCTAssertNotNil(data)
+    }
+
     func testJupyterHubSmallLive() {
         let view = JupyterHubFamilyView(content: live, timeZone: timeZone)
         let data: Data? = WidgetSnapshotter.snapshot(view, size: .small, named: "jupyterhub-small-live", in: self)

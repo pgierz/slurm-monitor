@@ -1,5 +1,6 @@
 import SlurmKit
 import SwiftUI
+import WidgetKit
 
 /// One partition of the node grid: the nodes that are drawn and the rows
 /// they take.
@@ -142,9 +143,12 @@ struct NodesCellGrid: View {
     let cellSize: CGFloat
     let gap: CGFloat
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
-        Canvas { context, size in
+        // Read here, not inside the drawing closure.
+        let reducedStyle: Bool = reduced
+        return Canvas { context, size in
             let perRow: Int = max(1, columns)
             let pitch: CGFloat = cellSize + gap
             for index in 0..<nodes.count {
@@ -156,9 +160,14 @@ struct NodesCellGrid: View {
                     width: cellSize,
                     height: cellSize
                 )
-                drawCell(nodes[index].state, in: rect, context: context)
+                if reducedStyle {
+                    drawReducedCell(nodes[index].state, in: rect, context: context)
+                } else {
+                    drawCell(nodes[index].state, in: rect, context: context)
+                }
             }
         }
+        .widgetAccentable()
     }
 
     private func drawCell(_ state: NodeState, in rect: CGRect, context: GraphicsContext) {
@@ -169,6 +178,22 @@ struct NodesCellGrid: View {
             let inset: CGRect = rect.insetBy(dx: 0.5, dy: 0.5)
             let outlinePath = Path(roundedRect: inset, cornerRadius: max(0, radius - 0.5))
             context.stroke(outlinePath, with: .color(outline), lineWidth: 1)
+        }
+    }
+
+    /// Reduced colour: one colour, the state in its opacity (allocated 1.0,
+    /// idle 0.25, drained 0.5); a down node is a hollow cell at 1.0.
+    private func drawReducedCell(_ state: NodeState, in rect: CGRect, context: GraphicsContext) {
+        let radius: CGFloat = cellSize / 4
+        let colour: Color = Theme.reducedColour(for: state, dimmed: dimmed)
+        if Theme.isHollowWhenReduced(state) {
+            let lineWidth: CGFloat = cellSize >= 10 ? 1.5 : 1
+            let inset: CGRect = rect.insetBy(dx: lineWidth / 2, dy: lineWidth / 2)
+            let outlinePath = Path(roundedRect: inset, cornerRadius: max(0, radius - lineWidth / 2))
+            context.stroke(outlinePath, with: .color(colour), lineWidth: lineWidth)
+        } else {
+            let path = Path(roundedRect: rect, cornerRadius: radius)
+            context.fill(path, with: .color(colour))
         }
     }
 
@@ -205,6 +230,7 @@ struct NodesExtraLargeView: View {
 
     let data: NodesData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -230,7 +256,7 @@ struct NodesExtraLargeView: View {
             if plan.hiddenNodes > 0 {
                 Text("and \(plan.hiddenNodes) more")
                     .font(Theme.footerFont)
-                    .foregroundStyle(Theme.secondaryText)
+                    .foregroundStyle(Theme.secondary(reduced: reduced))
                     .lineLimit(1)
             }
         }
@@ -244,6 +270,7 @@ struct NodesGridBlockRow: View {
     let plan: NodesGridPlan
     let gridWidth: CGFloat
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .top, spacing: NodesExtraLargeView.labelGap) {
@@ -270,7 +297,7 @@ struct NodesGridBlockRow: View {
             Spacer(minLength: 2)
             Text(block.partition.allocatedText)
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.secondaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.secondaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
                 .fixedSize()
         }

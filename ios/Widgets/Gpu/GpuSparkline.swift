@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 /// The line of the sparkline. Values are fractions, 0…1, oldest first. An
 /// empty history draws nothing; a single point draws a level line.
@@ -50,6 +51,7 @@ struct GpuSparkline: View {
     let values: [Double]
     var colour: Color = Theme.running
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         ZStack(alignment: .center) {
@@ -68,9 +70,10 @@ struct GpuSparkline: View {
     private var line: some View {
         GpuSparklineShape(values: values)
             .stroke(
-                Theme.figure(colour, dimmed: dimmed),
+                Theme.figure(colour, dimmed: dimmed, reduced: reduced),
                 style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
             )
+            .widgetAccentable()
             .padding(.vertical, 2)
             .padding(.horizontal, 1)
     }
@@ -78,7 +81,7 @@ struct GpuSparkline: View {
     private var emptyText: some View {
         Text("no history yet")
             .font(Theme.labelFont)
-            .foregroundStyle(Theme.secondaryText)
+            .foregroundStyle(Theme.secondary(reduced: reduced))
             .lineLimit(1)
     }
 }

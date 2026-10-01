@@ -21,6 +21,12 @@ struct WidgetSnapshotSize {
     static let small = WidgetSnapshotSize(name: "small", size: CGSize(width: 170, height: 170), shape: .system)
     static let medium = WidgetSnapshotSize(name: "medium", size: CGSize(width: 364, height: 170), shape: .system)
     static let large = WidgetSnapshotSize(name: "large", size: CGSize(width: 364, height: 382), shape: .system)
+    /// The small widget on 390 pt and 393 pt wide phones.
+    static let small158 = WidgetSnapshotSize(name: "small-158", size: CGSize(width: 158, height: 158), shape: .system)
+    /// The small widget on 375 pt wide phones.
+    static let small148 = WidgetSnapshotSize(name: "small-148", size: CGSize(width: 148, height: 148), shape: .system)
+    /// The large widget on 390 pt and 393 pt wide phones.
+    static let large338x354 = WidgetSnapshotSize(name: "large-338x354", size: CGSize(width: 338, height: 354), shape: .system)
     /// iPad only.
     static let extraLarge = WidgetSnapshotSize(name: "extra-large", size: CGSize(width: 715, height: 354), shape: .system)
     /// Lock Screen accessories.
@@ -31,7 +37,7 @@ struct WidgetSnapshotSize {
     static let accessoryInline = WidgetSnapshotSize(name: "accessory-inline", size: CGSize(width: 234, height: 26), shape: .accessory)
 
     static let all: [WidgetSnapshotSize] = [
-        .small, .medium, .large, .extraLarge,
+        .small, .small158, .small148, .medium, .large, .large338x354, .extraLarge,
         .accessoryCircular, .accessoryRectangular, .accessoryInline,
     ]
 }

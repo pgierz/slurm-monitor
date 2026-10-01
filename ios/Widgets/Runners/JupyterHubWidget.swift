@@ -10,7 +10,7 @@ struct JupyterHubSmallView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer(minLength: 0)
-            FigureView(value: "\(data.jupyterhub.sessions)", label: "sessions", colour: Theme.running, size: .large, dimmed: isStale)
+            FigureView(value: "\(data.jupyterhub.sessions)", label: "sessions", colour: Theme.running, size: .large, dimmed: isStale, accent: true)
             Spacer(minLength: 0)
             footer
         }
@@ -31,7 +31,7 @@ struct JupyterHubSmallView: View {
 /// The screenshot tests construct this directly.
 struct JupyterHubFamilyView: View {
     let content: WidgetContent<RunnersData>
-    var timeZone: TimeZone = TimeZone.current
+    var timeZone: TimeZone = TimeZone.autoupdatingCurrent
 
     var body: some View {
         FamilyWidgetView(

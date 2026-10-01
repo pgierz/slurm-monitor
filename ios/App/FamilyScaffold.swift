@@ -66,7 +66,7 @@ struct FamilyScaffold<T, Detail: View>: View {
             detail(value, Tone(stale: true))
         case .vpnNeeded(let last, _):
             NoticeView(
-                symbolName: "xmark.shield",
+                symbolName: "lock.shield",
                 title: "VPN needed",
                 message: "The server could not be reached. Connect to the VPN, then pull down to refresh.",
                 compact: last != nil
@@ -206,7 +206,7 @@ struct PartitionMenu: View {
 #Preview("Notices") {
     ScrollView {
         VStack(spacing: 24) {
-            NoticeView(symbolName: "xmark.shield", title: "VPN needed",
+            NoticeView(symbolName: "lock.shield", title: "VPN needed",
                        message: "The server could not be reached. Connect to the VPN, then pull down to refresh.",
                        compact: true)
             NoticeView(symbolName: "key.fill", title: "Sign in needed",

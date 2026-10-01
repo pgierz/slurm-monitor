@@ -179,7 +179,7 @@ class SyntheticCluster:
             mark(f"prod-{number:03d}", ["DRAIN"])
         mark("prod-045", ["DRAIN"], usable=True)  # draining while still allocated
         mark("prod-150", ["RESERVED"])
-        mark("smp-050", ["MAINT"])
+        mark("smp-050", ["MAINTENANCE"])
         mark("smp-051", ["DRAIN"])
         mark("gpu-004", ["DRAIN"])
         return nodes

@@ -20,7 +20,7 @@ PrivateTmp=yes
 ProtectKernelTunables=yes
 ProtectControlGroups=yes
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-MemoryMax=64M
+MemoryMax=128M
 
 [Install]
 WantedBy=multi-user.target

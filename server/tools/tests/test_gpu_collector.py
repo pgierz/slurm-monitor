@@ -155,3 +155,13 @@ def test_http_503_when_nvidia_smi_is_missing(serve, tmp_path):
 
 def test_short_hostname_has_no_dots():
     assert "." not in gc.short_hostname()
+
+
+def test_service_unit_memory_limit():
+    import os
+    unit = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "gpu-collector.service")
+    with open(unit) as handle:
+        lines = [line.strip() for line in handle]
+    # Python plus an nvidia-smi child need more than 64M on some driver versions.
+    assert "MemoryMax=128M" in lines

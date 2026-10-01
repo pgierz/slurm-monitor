@@ -8,6 +8,7 @@ and give states as lists of flags. Every helper here accepts both forms.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -16,6 +17,9 @@ from typing import Any
 # plugin does not translate them.
 _NO_VAL_SENTINELS = {0xFFFFFFFE, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFE, 0xFFFFFFFFFFFFFFFF}
 _INFINITE_SENTINELS = {0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF}
+# Time stamps beyond the year 3000 are sentinels or garbage, and far larger
+# ones cannot be formatted as a date at all.
+MAX_TIMESTAMP = 32_503_680_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +45,8 @@ def parse_number(raw: Any) -> Number:
             return Number(None)
         return parse_number(raw.get("number"))
     if isinstance(raw, int | float):
+        if isinstance(raw, float) and not math.isfinite(raw):
+            return Number(None)
         if raw in _INFINITE_SENTINELS:
             return Number(None, infinite=True)
         if raw in _NO_VAL_SENTINELS:
@@ -51,9 +57,10 @@ def parse_number(raw: Any) -> Number:
         if text.upper() in {"INFINITE", "UNLIMITED"}:
             return Number(None, infinite=True)
         try:
-            return Number(float(text))
+            value = float(text)
         except ValueError:
             return Number(None)
+        return Number(value) if math.isfinite(value) else Number(None)
     return Number(None)
 
 
@@ -69,9 +76,9 @@ def parse_float(raw: Any) -> float | None:
 
 
 def parse_timestamp(raw: Any) -> int | None:
-    """Unix seconds; zero and unset both mean 'not known'."""
+    """Unix seconds; zero, unset and out-of-range values all mean 'not known'."""
     value = parse_int(raw)
-    return value if value and value > 0 else None
+    return value if value and 0 < value <= MAX_TIMESTAMP else None
 
 
 def parse_text(raw: Any) -> str:

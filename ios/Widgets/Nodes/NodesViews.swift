@@ -6,41 +6,69 @@ import SwiftUI
 // and the stale flag as plain values.
 
 /// Small: the ring with the allocated percentage, and a two-by-two legend.
+/// The ring takes the height the legend leaves, up to 76 pt, so that the
+/// layout also fits the small widgets of smaller phones.
 struct NodesSmallView: View {
-    static let ringDiameter: CGFloat = 76
+    /// Diameter in the 170 pt widget, and the largest drawn.
+    static let maximumRingDiameter: CGFloat = 76
+    static let minimumRingDiameter: CGFloat = 44
+    /// Line width at the full diameter; scaled with the ring.
+    static let ringLineWidth: CGFloat = 9
+    /// Two legend lines and the gap between them.
+    static let legendHeight: CGFloat = 28
+    static let spacing: CGFloat = 6
 
     let data: NodesData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
-    var body: some View {
-        VStack(alignment: .center, spacing: 6) {
-            ring
-            legend
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    /// The ring diameter for a body `height` points high.
+    static func ringDiameter(forHeight height: CGFloat) -> CGFloat {
+        let free: CGFloat = height - legendHeight - spacing
+        return min(maximumRingDiameter, max(minimumRingDiameter, free.rounded(.down)))
     }
 
-    private var ring: some View {
-        ZStack {
-            NodesRing(counts: data.stateCounts, lineWidth: 9, dimmed: isStale)
-            centre
+    static func strokeWidth(forDiameter diameter: CGFloat) -> CGFloat {
+        ringLineWidth * diameter / maximumRingDiameter
+    }
+
+    var body: some View {
+        GeometryReader { (proxy: GeometryProxy) in
+            layout(diameter: NodesSmallView.ringDiameter(forHeight: proxy.size.height))
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
-        .frame(width: NodesSmallView.ringDiameter, height: NodesSmallView.ringDiameter)
+    }
+
+    private func layout(diameter: CGFloat) -> some View {
+        VStack(alignment: .center, spacing: NodesSmallView.spacing) {
+            ring(diameter: diameter)
+            legend
+        }
+    }
+
+    private func ring(diameter: CGFloat) -> some View {
+        let lineWidth: CGFloat = NodesSmallView.strokeWidth(forDiameter: diameter)
+        return ZStack {
+            NodesRing(counts: data.stateCounts, lineWidth: lineWidth, dimmed: isStale)
+            centre
+                .frame(width: max(20, diameter - 2 * lineWidth - 8))
+        }
+        .frame(width: diameter, height: diameter)
     }
 
     private var centre: some View {
         VStack(alignment: .center, spacing: 0) {
             Text(Format.percent(data.allocatedFraction))
                 .font(Theme.figureFont(size: 17))
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text("allocated")
                 .font(.system(size: 8, weight: .regular))
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
-        .frame(width: NodesSmallView.ringDiameter - 26)
     }
 
     private var legend: some View {
@@ -57,8 +85,15 @@ struct NodesSmallView: View {
     }
 
     private func item(_ state: NodeState, label: String, count: Int) -> some View {
-        LegendItem(colour: Theme.colour(for: state), label: label, value: "\(count)", dimmed: isStale)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        LegendItem(
+            colour: Theme.colour(for: state),
+            label: label,
+            value: "\(count)",
+            dimmed: isStale,
+            reducedOpacity: Theme.reducedOpacity(for: state),
+            hollowWhenReduced: Theme.isHollowWhenReduced(state)
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -73,21 +108,36 @@ struct NodesLegendFooter: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.footerGap) {
             Hairline()
             HStack(alignment: .center, spacing: 12) {
-                LegendItem(colour: Theme.running, label: "allocated", value: "\(counts.allocated)", dimmed: dimmed)
+                LegendItem(
+                    colour: Theme.running,
+                    label: "allocated",
+                    value: "\(counts.allocated)",
+                    dimmed: dimmed,
+                    reducedOpacity: Theme.reducedOpacity(for: .allocated)
+                )
                 LegendItem(
                     colour: gridStyle ? Theme.track : Theme.idleSegment,
                     label: "idle",
                     value: "\(counts.idle)",
                     outline: gridStyle ? Theme.idleOutline : nil,
-                    dimmed: dimmed
+                    dimmed: dimmed,
+                    reducedOpacity: Theme.reducedOpacity(for: .idle)
                 )
-                LegendItem(colour: Theme.drained, label: "drained", value: "\(counts.drained)", dimmed: dimmed)
+                LegendItem(
+                    colour: Theme.drained,
+                    label: "drained",
+                    value: "\(counts.drained)",
+                    dimmed: dimmed,
+                    reducedOpacity: Theme.reducedOpacity(for: .drained)
+                )
                 LegendItem(
                     colour: Theme.down,
                     label: "down",
                     value: "\(counts.down)",
                     outline: gridStyle ? Theme.primaryText : nil,
-                    dimmed: dimmed
+                    dimmed: dimmed,
+                    reducedOpacity: Theme.reducedOpacity(for: .down),
+                    hollowWhenReduced: true
                 )
                 Spacer(minLength: 0)
             }
@@ -101,6 +151,7 @@ struct NodesMediumView: View {
 
     let data: NodesData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -131,7 +182,7 @@ struct NodesMediumView: View {
     private var emptyMessage: some View {
         Text("No partitions reported")
             .font(Theme.footerFont)
-            .foregroundStyle(Theme.secondaryText)
+            .foregroundStyle(Theme.secondary(reduced: reduced))
     }
 }
 
@@ -139,6 +190,7 @@ struct NodesMediumView: View {
 struct NodesPartitionRow: View {
     let partition: PartitionNodes
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -151,7 +203,7 @@ struct NodesPartitionRow: View {
             StackedBar(segments: segments, dimmed: isStale)
             Text(partition.allocatedText)
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(width: 54, alignment: .trailing)
@@ -166,18 +218,28 @@ struct NodesPartitionRow: View {
 
     private var segments: [BarSegment] {
         [
-            BarSegment(weight: Double(partition.allocated), colour: Theme.colour(for: .allocated)),
-            BarSegment(weight: Double(partition.idle), colour: Theme.colour(for: .idle)),
-            BarSegment(weight: Double(partition.drained), colour: Theme.colour(for: .drained)),
-            BarSegment(weight: Double(partition.down), colour: Theme.colour(for: .down)),
+            segment(.allocated, count: partition.allocated),
+            segment(.idle, count: partition.idle),
+            segment(.drained, count: partition.drained),
+            segment(.down, count: partition.down),
         ]
+    }
+
+    private func segment(_ state: NodeState, count: Int) -> BarSegment {
+        BarSegment(
+            weight: Double(count),
+            colour: Theme.colour(for: state),
+            reducedOpacity: Theme.reducedOpacity(for: state),
+            hollowWhenReduced: Theme.isHollowWhenReduced(state),
+            accent: state == .allocated
+        )
     }
 
     /// Light red when more than one node is down.
     private var downColour: Color {
         if partition.down > 1 {
-            return Theme.figure(Theme.down, dimmed: isStale)
+            return Theme.figure(Theme.down, dimmed: isStale, reduced: reduced)
         }
-        return Theme.secondaryText
+        return Theme.secondary(reduced: reduced)
     }
 }

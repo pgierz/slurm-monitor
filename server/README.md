@@ -46,8 +46,14 @@ python3 -m venv /opt/slurm-monitor/venv
 ```
 
 or build the container image with `deploy/Containerfile` (the build command is
-at the top of that file). `deploy/slurm-monitor-server.service` is a systemd
-unit for the virtual-environment install.
+at the top of that file). The image installs the dependencies exactly as
+recorded in `uv.lock` (`uv sync --frozen`), so it holds the versions the tests
+ran with; the `pip install` above resolves afresh within the ranges of
+`pyproject.toml`. `deploy/slurm-monitor-server.service` is a systemd unit for
+the virtual-environment install.
+
+A misspelt or unknown key in the configuration file is an error at start-up,
+not something silently ignored.
 
 ## Configure
 
@@ -69,13 +75,27 @@ cluster = "example"
 
 [slurm]
 base_url = "https://slurm.example.org:6820"
-api_version = "v0.0.40"          # what your slurmrestd offers: see `slurmrestd -d list`
 user_name = "slurm-monitor"
 token_file = "/run/slurm-monitor/slurm.jwt"
 
 [auth.static]
 enabled = true                   # tokens from the environment
 ```
+
+### API version
+
+slurmrestd puts a data-parser version into every path
+(`/slurm/v0.0.41/jobs`), and each Slurm release offers a different handful of
+them. Leave `slurm.api_version` unset: the server reads the slurmrestd's
+OpenAPI document (`/openapi/v3`, else `/openapi.json`, else `/openapi`) before
+its first poll, takes the newest version offered, separately for `slurm` and
+`slurmdb`, and logs it. When jobs or nodes answer 404 three times in a row,
+as after a Slurm upgrade that dropped the version in use, it looks again. The
+version in use is shown as `slurm_api_version` by `/api/v1/health`.
+
+Set `api_version` (and, if it differs, `db_api_version`) only to hold the
+server to one version; `slurmrestd -d list` shows what yours offers. A fixed
+version is never changed by the server.
 
 ### What the Slurm user must be able to see
 
@@ -86,27 +106,55 @@ user of this server then needs operator rights (or to be the `SlurmUser`) for
 the cluster-wide figures to be right.
 
 Jobs and nodes are required: when either fails, the poll fails, and the server
-keeps answering from the last good poll with `"stale": true`. Partitions, QOS
-and shares are optional: without QOS the limits are `null`, without shares
-(older than v0.0.40, or no slurmdbd) `fairshare` is `null`.
+keeps answering from the last good poll with `"stale": true`. While polls fail
+the interval between them doubles, up to five minutes; the first success
+brings it back to `poll.interval_seconds`.
+
+Partitions, QOS and shares are optional. When the QOS or the shares request
+fails, the last good QOS limits and shares are kept; when it never succeeded
+(older than v0.0.40, or no slurmdbd) the limits or `fairshare` are `null`.
+The log says so once when such a request starts failing and once when it
+works again, not on every poll. An answer with HTTP 200 whose `errors` array
+is not empty counts as a failure, for every request.
+
+JSON parsing and the reduction of the payloads run in a worker thread, so the
+API keeps answering during the poll of a large cluster.
 
 ### Token rotation
 
 Slurm JWTs expire. Three ways to supply one, in order of preference:
 
-1. **A token file, rotated by cron or a systemd timer.** The file is read anew
-   on every poll, so nothing needs restarting:
+1. **A token file, rotated by a systemd timer.** The file is read anew on
+   every poll, so nothing needs restarting. `deploy/` holds the pair:
+
+   - `slurm-monitor-token.service`, a oneshot unit that runs
+     `scontrol token username=slurm-monitor lifespan=7200` as root and writes
+     the result to `/run/slurm-monitor/slurm.jwt` (mode 0600, owned by the
+     server's user, written to a second file and renamed);
+   - `slurm-monitor-token.timer`, which starts it 30 seconds after boot and
+     every 30 minutes after that (`OnBootSec=30s`, `OnUnitActiveSec=30min`).
 
    ```sh
-   # /etc/cron.d/slurm-monitor-token (runs as root or SlurmUser)
-   */30 * * * * root  umask 077; scontrol token username=slurm-monitor lifespan=7200 \
-       | sed 's/^SLURM_JWT=//' > /run/slurm-monitor/slurm.jwt.new \
-       && chown slurm-monitor: /run/slurm-monitor/slurm.jwt.new \
-       && mv /run/slurm-monitor/slurm.jwt.new /run/slurm-monitor/slurm.jwt
+   install -m 0644 deploy/slurm-monitor-token.service deploy/slurm-monitor-token.timer \
+       /etc/systemd/system/
+   systemctl daemon-reload && systemctl enable --now slurm-monitor-token.timer
    ```
 
-   The lifespan is longer than the rotation interval, so a missed run does no
-   harm. The `SLURM_JWT=` prefix may also be left in; the server strips it.
+   The token unit is ordered before `slurm-monitor-server.service`, and the
+   server unit asks for it, so at boot the token is there before the first
+   poll. `/run` is empty after a reboot, which is why a cron job every half
+   hour is not enough. The lifespan is four times the timer's period, so a
+   few missed runs do no harm. The `SLURM_JWT=` prefix may also be left in
+   the file; the server strips it. Adapt the user name and the lifespan in
+   the unit; the host needs `scontrol` and a readable Slurm configuration.
+
+   The token file must be readable by the user the server runs as. With the
+   container image that is uid 10001 inside the container, not a user of the
+   host: mount `/run/slurm-monitor` read-only into the container and either
+   `chown 10001` the file in the token unit (rootful podman or docker), or
+   run the container with `--user` set to the uid that owns the file
+   (rootless podman maps uids; `--userns=keep-id` keeps yours). A poll that
+   fails with "token file unreadable" in the log is this.
 
 2. **A token command**, run by the server itself and re-run every
    `token_command_ttl_seconds` (and after a 401 from slurmrestd):
@@ -130,21 +178,71 @@ its bearer token.
   constant time. The app then sends the Slurm user name it should treat as
   "mine" as the `user` parameter.
 - **OIDC** (`[auth.oidc]`): access tokens of one issuer, for example the
-  Helmholtz AAI. JWT access tokens are validated against the issuer's JWKS
-  (signature, issuer, expiry, and the audience when `audience` is set). Opaque
-  tokens, and JWTs that lack the needed claims, are resolved through the
-  issuer's userinfo endpoint and cached for `userinfo_cache_seconds`. With
-  `required_entitlements`, an identity lacking all of them gets 403. The
-  Slurm user name comes from `username_claim` (default `preferred_username`),
-  or from `username_map` where that claim differs from the cluster account.
-  With OIDC, `user` defaults to that name. `user=*` asks for no particular user
-  (the whole cluster's view), with either method.
-
-  When the issuer cannot be reached, the answer is `503
-  {"error": "auth_unavailable"}` rather than 401, so that the app does not
-  ask the person to sign in again because of an outage.
+  Helmholtz AAI. The Slurm user name comes from `username_claim` (default
+  `preferred_username`), or from `username_map` where that claim differs from
+  the cluster account. With OIDC, `user` defaults to that name. `user=*` asks
+  for no particular user (the whole cluster's view), with either method.
 
 If no method is enabled, every request to a protected endpoint gets 401.
+
+#### Who is let in with OIDC
+
+- **Entitlement.** `required_entitlements` names the values of which an
+  identity must hold at least one (in `eduperson_entitlement`, `entitlements`
+  or `groups`); anyone else gets 403. With OIDC enabled the server refuses to
+  start while the list is empty, because an issuer such as the Helmholtz AAI
+  authenticates far more people than may see this cluster. To accept
+  everyone the issuer knows on purpose, set `allow_any_authenticated = true`.
+- **Audience.** A JWT access token must be meant for this application: its
+  `aud` claim (a string or a list), its `azp` claim or its `client_id` claim
+  must name the configured `client_id`. With `audience` set, `aud` must name
+  that value instead. For a provider whose access tokens carry none of the
+  three claims there is `verify_audience = false`; this weakens the check,
+  since a token the issuer gave to any other application is then accepted
+  here as well.
+- **Opaque tokens cannot be audience-checked.** A string that is not a
+  well-formed JWT is taken for an opaque access token and resolved through
+  the issuer's userinfo endpoint (cached for `userinfo_cache_seconds`).
+  Userinfo tells whose token it is, not which application it was issued to,
+  so any valid access token of the issuer passes, subject to the entitlement.
+  This is on by default (`accept_opaque_tokens = true`) because the format of
+  the Helmholtz AAI's access tokens is not yet confirmed
+  (`docs/helmholtz-aai.md`). Once they are known to be JWTs, set it to
+  `false`: anything that is not a JWT is then refused at once.
+- **Any signed-in user may ask for another user's view** with
+  `user=<name>`, and for the whole cluster's with `user=*`. The server is a
+  read-only status display. It reads Slurm with one service account and does
+  not enforce Slurm's `PrivateData`: what that account can see, every person
+  who is let in can see. If that is not acceptable at your site, do not
+  give the service account more than an ordinary user's view.
+
+#### How tokens are checked
+
+JWT access tokens are validated against the issuer's JWKS: signature (RSA,
+ECDSA or EdDSA only), issuer, expiry and audience. A JWT that lacks the
+subject, the user name claim or the entitlement claims is completed from
+userinfo; the subject userinfo gives must be the token's own.
+
+- A refused token is remembered by its hash for 60 seconds, so a client that
+  repeats a bad token does not cause a request to the issuer each time.
+- When the issuer cannot be reached, the answer is `503
+  {"error": "auth_unavailable"}` rather than 401, so that the app does not
+  ask the person to sign in again because of an outage. The same answer is
+  given when the issuer's discovery document, JWKS or userinfo answer is
+  malformed.
+- What can be decided without the issuer still is: a token that is expired,
+  names another issuer, uses a signature algorithm that is not accepted, or
+  is not a bearer token at all gets 401 during an outage too, and so does a
+  non-JWT when `accept_opaque_tokens` is false.
+- The JWKS is cached for `jwks_cache_seconds`. When it cannot be refreshed,
+  the keys already held keep being used, so signed-in people stay signed in
+  through an outage of the issuer.
+- A JWT with a valid signature that only lacks the user name is accepted
+  without one when userinfo cannot be reached (`username` is then `null`
+  and the app falls back to the name in its settings). If the entitlement is
+  what is missing, the answer is 503: that cannot be decided without the
+  issuer.
+
 The server speaks plain HTTP; put it behind the institute's reverse proxy for
 TLS.
 
@@ -187,7 +285,13 @@ curl -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/v1/nodes
 
 `last_poll_ok` in the health answer tells whether the most recent poll
 succeeded; the reason for a failure is in the log. Before the first successful
-poll the family endpoints answer `503 {"error": "no_data"}`.
+poll the family endpoints answer `503 {"error": "no_data"}`. Every error
+answer has the shape `{"error": "<code>"}`; the codes are listed in
+`docs/contract.md`.
+
+The log warns once when jobs arrive with an empty `user_name` (slurmrestd
+could not resolve user ids, usually a missing user database on its host):
+such jobs count for the cluster but never as anybody's own.
 
 With `[metrics] enabled = true` the server also offers `/metrics` in the
 Prometheus text format (a handful of gauges, no authentication).

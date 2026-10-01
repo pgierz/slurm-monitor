@@ -65,7 +65,7 @@ struct SettingsScreen: View {
         } header: {
             Text("Server")
         } footer: {
-            Text("The address of the Slurm Monitor server, without a path. https is assumed when no scheme is given.")
+            Text("The address of the Slurm Monitor server, without a path. https is assumed when no scheme is given. Saving another address signs you out, because a sign-in belongs to one server.")
         }
         .listRowBackground(Palette.panel)
     }
@@ -114,7 +114,7 @@ struct SettingsScreen: View {
         } header: {
             Text("User")
         } footer: {
-            Text("The username selects whose jobs count as mine. The default partition is preselected in the Queue and Nodes sections and offered to the widgets.")
+            Text("The username selects whose jobs count as mine. The default partition is preselected in the Queue and Nodes sections, and the Queue and Nodes widgets show it when their own partition is left empty.")
         }
         .listRowBackground(Palette.panel)
     }

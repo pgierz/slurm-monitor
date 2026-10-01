@@ -45,14 +45,18 @@ enum RunnersProvider {
     static func staticProvider() -> FamilyStaticProvider<RunnersData> {
         FamilyStaticProvider<RunnersData>(
             sample: SampleData.runners.data,
-            fetch: RunnersProvider.fetchEveryone(loader:)
+            fetch: { (loader: SnapshotLoader) in
+                await RunnersProvider.fetchEveryone(loader: loader)
+            }
         )
     }
 
     static func daskProvider() -> FamilyIntentProvider<RunnersData, DaskConfigurationIntent> {
         FamilyIntentProvider<RunnersData, DaskConfigurationIntent>(
             sample: SampleData.runners.data,
-            fetch: RunnersProvider.fetchDask(loader:configuration:)
+            fetch: { (loader: SnapshotLoader, configuration: DaskConfigurationIntent) in
+                await RunnersProvider.fetchDask(loader: loader, configuration: configuration)
+            }
         )
     }
 }
@@ -63,17 +67,18 @@ struct RunnersFooterLine: View {
     let value: String
     var valueColour: Color = Theme.primaryText
     var dimmed: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(label)
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
                 .lineLimit(1)
             Spacer(minLength: 4)
             Text(value)
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(valueColour, dimmed: dimmed))
+                .foregroundStyle(Theme.figure(valueColour, dimmed: dimmed, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }

@@ -17,6 +17,11 @@ not into the repository.
 2. **Record real payloads**
    - [ ] `python3 server/tools/dump_slurmrestd.py --base-url https://slurm.example.org:6820`
    - [ ] Check the anonymisation (`server/tools/README.md`, "Checking before sharing").
+   - [ ] Note the API versions the script detected (first line of its
+         output, `api_versions` in `manifest.json`). The server detects the
+         newest version in the same way when `slurm.api_version` is not set;
+         fix the version in the configuration only if the newest one
+         misbehaves.
    - [ ] Compare with the synthetic fixtures in `server/tests`: API version,
          JSON style (plain values or `set/infinite/number` objects), field
          names the server reads, state and reason strings, GRES format.
@@ -29,6 +34,25 @@ not into the repository.
    - [ ] Otherwise install `gpu_collector.py` with `gpu-collector.service` on
          every GPU node; open port 9455 to the server host only;
          `curl http://<node>:9455/metrics.json` from the server host.
+   - [ ] The collector is reached by Slurm node name
+         (`http://<NodeName>:9455/metrics.json`). Where `NodeAddr` or
+         `NodeHostname` differ from `NodeName` in `slurm.conf`
+         (`scontrol show node <node> | grep -E 'NodeAddr|NodeHostName'`),
+         check that the node name itself resolves from the server host, and
+         that it leads to the interface the collector listens on. With
+         Prometheus, check that the node label holds the Slurm node name
+         (a domain and a port are stripped, nothing else).
+   - [ ] The card indices of the metrics source match Slurm's `IDX`
+         numbering. On a GPU node with a running GPU job compare
+         `scontrol show node <node> | grep GresUsed` (or
+         `scontrol show job -d <jobid> | grep IDX`) with
+         `nvidia-smi --query-gpu=index,uuid,utilization.gpu --format=csv`
+         and, for DCGM, the `gpu` label: the card Slurm calls `IDX:0` must be
+         the one the source calls index 0, and the busy card must be the
+         allocated one. They differ when `gres.conf` lists the device files
+         in another order than the driver enumerates them; correct
+         `gres.conf` (or use `AutoDetect=nvml`), since a wrong pairing shows
+         busy cards as idle.
    - [ ] Neither → run with `metrics_available: false` for now.
 
 4. **Helmholtz AAI client** (`docs/helmholtz-aai.md`)
@@ -39,7 +63,12 @@ not into the repository.
 5. **Install the server** (`server/README.md`)
    - [ ] Configuration: slurmrestd URL, service user, token file, cluster
          name, GPU source, OIDC issuer and client id, static token if used.
-   - [ ] Service running; `GET /api/v1/health` shows `last_poll_ok: true`.
+   - [ ] Token rotation: `slurm-monitor-token.timer` enabled
+         (`server/deploy`), token file readable by the server's user (in a
+         container: by the container's uid).
+   - [ ] Service running; `GET /api/v1/health` shows `last_poll_ok: true`
+         and, in `slurm_api_version`, the version that was detected (also in
+         the log at start-up).
    - [ ] Reachable from the VPN, and only from there.
 
 6. **Confirm the job name patterns against the live queue**

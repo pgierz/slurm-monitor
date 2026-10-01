@@ -37,6 +37,55 @@ final class NodesSnapshotTests: XCTestCase {
         render(stale, layout: .small, size: .small, named: "nodes-small-stale")
     }
 
+    /// The small widget of smaller phones: the ring gives way to the legend.
+    func testNodesSmall158() {
+        render(live, layout: .small, size: .small158, named: "nodes-small-158")
+    }
+
+    /// The reduced style of the tinted Home Screen and of StandBy at night,
+    /// forced through the environment: states by opacity, down nodes hollow.
+    func testNodesExtraLargeAccented() {
+        let view = NodesFamilyView(content: live, size: .extraLarge, timeZone: timeZone)
+            .environment(\.reducedColour, true)
+        let data: Data? = WidgetSnapshotter.snapshot(view, size: .extraLarge, named: "nodes-xlarge-accented", in: self)
+        XCTAssertNotNil(data)
+    }
+
+    func testRingDiameterFollowsTheHeight() {
+        // 170 pt widget: the full ring, as before.
+        XCTAssertEqual(NodesSmallView.ringDiameter(forHeight: 116), 76)
+        XCTAssertEqual(NodesSmallView.strokeWidth(forDiameter: 76), 9)
+        // 158 pt and 148 pt widgets: smaller, and with the legend within the height.
+        for height in [CGFloat(104), CGFloat(94)] {
+            let diameter: CGFloat = NodesSmallView.ringDiameter(forHeight: height)
+            XCTAssertLessThan(diameter, 76)
+            XCTAssertLessThanOrEqual(diameter + NodesSmallView.spacing + NodesSmallView.legendHeight, height)
+        }
+        XCTAssertEqual(NodesSmallView.ringDiameter(forHeight: 10), NodesSmallView.minimumRingDiameter)
+    }
+
+    func testReducedColourOpacities() {
+        XCTAssertEqual(Theme.reducedOpacity(for: .allocated), 1.0)
+        XCTAssertEqual(Theme.reducedOpacity(for: .idle), 0.25)
+        XCTAssertEqual(Theme.reducedOpacity(for: .drained), 0.5)
+        XCTAssertEqual(Theme.reducedOpacity(for: .down), 1.0)
+        XCTAssertTrue(Theme.isHollowWhenReduced(.down))
+        XCTAssertFalse(Theme.isHollowWhenReduced(.allocated))
+        XCTAssertEqual(Theme.reducedOpacity(for: .drained, dimmed: true), 0.25)
+    }
+
+    func testEmptyPartitionFallsBackToTheDefault() {
+        let withDefault = ServerSettings(serverURL: nil, username: nil, defaultPartition: "mpp")
+        let without = ServerSettings()
+        XCTAssertEqual(NodesWidgetLogic.effectivePartition("gpu", settings: withDefault), "gpu")
+        XCTAssertEqual(NodesWidgetLogic.effectivePartition(nil, settings: withDefault), "mpp")
+        XCTAssertEqual(NodesWidgetLogic.effectivePartition("  ", settings: withDefault), "mpp")
+        XCTAssertNil(NodesWidgetLogic.effectivePartition(nil, settings: without))
+        XCTAssertEqual(QueueWidgetLogic.effectivePartition("", settings: withDefault), "mpp")
+        XCTAssertEqual(QueueWidgetLogic.effectivePartition("smp", settings: withDefault), "smp")
+        XCTAssertNil(QueueWidgetLogic.effectivePartition("", settings: without))
+    }
+
     /// The grid plan: the largest cell that fits (16 pt for the sample, 20 pt
     /// for a handful of nodes), smaller cells for more nodes, and a cap with
     /// a count of the rest as the last resort.

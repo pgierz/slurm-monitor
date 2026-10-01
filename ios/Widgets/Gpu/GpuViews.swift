@@ -1,5 +1,6 @@
 import SlurmKit
 import SwiftUI
+import WidgetKit
 
 // The four GPU layouts. Each draws the body below the header and takes the
 // data and the stale flag as plain values.
@@ -10,6 +11,7 @@ struct GpuSmallView: View {
 
     let data: GpuData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -26,10 +28,11 @@ struct GpuSmallView: View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
             Text("\(data.allocated)")
                 .font(Theme.figureFont(size: 32))
-                .foregroundStyle(Theme.figure(Theme.running, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.running, dimmed: isStale, reduced: reduced))
+                .widgetAccentable()
             Text("/ \(data.total)")
                 .font(Theme.figureFont(size: 15, weight: .medium))
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
         }
         .lineLimit(1)
         .minimumScaleFactor(0.6)
@@ -40,7 +43,7 @@ struct GpuSmallView: View {
         if data.showsIdleAllocated {
             Text("\(data.idleAllocated ?? 0) allocated but idle")
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.figure(Theme.pending, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.pending, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.top, 2)
@@ -77,10 +80,10 @@ struct GpuSmallView: View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
             Text(type.label)
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
             Text(type.allocatedText)
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
         }
     }
 }
@@ -92,6 +95,7 @@ struct GpuMediumView: View {
 
     let data: GpuData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.column) {
@@ -176,11 +180,11 @@ struct GpuMediumView: View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(data.sparklineLabel)
                 .font(Theme.labelFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
             Spacer(minLength: 2)
             Text(Format.percent(data.currentSparklineValue))
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
         }
         .lineLimit(1)
         .minimumScaleFactor(0.8)
@@ -213,12 +217,13 @@ struct GpuGridArea: View {
     let metrics: GpuGridMetrics
     let maxRows: Int
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         if data.nodes.isEmpty {
             Text("No GPU nodes")
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
         } else {
             GpuNodeGrid(plan: plan, width: areaSize.width, metrics: metrics, isStale: isStale)
         }
@@ -238,6 +243,7 @@ struct GpuExtraLargeView: View {
 
     let data: GpuData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -253,7 +259,7 @@ struct GpuExtraLargeView: View {
 
     private var divider: some View {
         Rectangle()
-            .fill(Theme.hairline)
+            .fill(Theme.hairlineColour(reduced: reduced))
             .frame(width: Theme.Spacing.hairlineHeight)
             .frame(maxHeight: .infinity)
     }
@@ -263,6 +269,7 @@ struct GpuExtraLargeView: View {
 struct GpuSideColumn: View {
     let data: GpuData
     var isStale: Bool = false
+    @Environment(\.reducedColour) private var reduced
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -285,7 +292,7 @@ struct GpuSideColumn: View {
         if shownUsers.isEmpty {
             Text("No cards allocated")
                 .font(Theme.footerFont)
-                .foregroundStyle(Theme.secondaryText)
+                .foregroundStyle(Theme.secondary(reduced: reduced))
         } else {
             ForEach(shownUsers) { (user: GpuUserCards) in
                 userRow(user)
@@ -303,7 +310,7 @@ struct GpuSideColumn: View {
             Spacer(minLength: 4)
             Text("\(user.cards)")
                 .font(Theme.footerValueFont)
-                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale))
+                .foregroundStyle(Theme.figure(Theme.primaryText, dimmed: isStale, reduced: reduced))
                 .lineLimit(1)
         }
     }
@@ -315,7 +322,7 @@ struct GpuSideColumn: View {
     private var pendingText: some View {
         Text(data.pendingLine)
             .font(Theme.footerFont)
-            .foregroundStyle(Theme.figure(pendingColour, dimmed: isStale))
+            .foregroundStyle(Theme.figure(pendingColour, dimmed: isStale, reduced: reduced))
             .lineLimit(1)
             .minimumScaleFactor(0.7)
     }

@@ -3,4 +3,13 @@
 // (git-ignored) and set DEVELOPMENT_TEAM there.
 DEVELOPMENT_TEAM =
 
+// The one place the identifiers come from. The bundle identifiers of the app
+// and the widget extension, the app group (group.<base>) and the keychain
+// access group are all derived from it in project.yml and the entitlements.
+// Should the identifier be claimed by another team, override APP_ID_BASE in
+// Signing.xcconfig; nothing else needs to change. The URL scheme of the
+// sign-in callback is not derived from it: it is fixed in the data contract.
+APP_ID_BASE = de.awi.slurm-monitor
+
+// Must stay last, so that Signing.xcconfig can override the values above.
 #include? "Signing.xcconfig"

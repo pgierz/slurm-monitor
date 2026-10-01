@@ -9,9 +9,12 @@ options:
   createIntermediateGroups: true
   developmentLanguage: en
 
-# Project.xcconfig holds an empty DEVELOPMENT_TEAM and optionally includes the
-# git-ignored Signing.xcconfig. DEVELOPMENT_TEAM is deliberately not set in
-# `settings:` below, because project settings would override the xcconfig.
+# Project.xcconfig holds an empty DEVELOPMENT_TEAM, the identifier base
+# APP_ID_BASE, and optionally includes the git-ignored Signing.xcconfig.
+# Neither is set in `settings:` below, because project settings would
+# override the xcconfig. Every identifier here is written with $(APP_ID_BASE),
+# which Xcode resolves at build time, in build settings, in the Info.plist
+# values and in the entitlements alike.
 configFiles:
   Debug: Project.xcconfig
   Release: Project.xcconfig
@@ -48,6 +51,11 @@ targets:
           NSAllowsArbitraryLoads: true
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Read by SlurmKitConstants.appGroup; must match the entitlements.
+        SlurmMonitorAppGroup: group.$(APP_ID_BASE)
+        NSLocalNetworkUsageDescription: Slurm Monitor reads cluster status from your server on the local network.
+        # Only the system's own TLS is used.
+        ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -59,13 +67,15 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         CFBundleURLTypes:
-          - CFBundleURLName: de.awi.slurm-monitor.oauth
+          - CFBundleURLName: $(APP_ID_BASE).oauth
             CFBundleTypeRole: Viewer
+            # Fixed by the data contract (redirect URI of the sign-in), so
+            # not derived from APP_ID_BASE.
             CFBundleURLSchemes:
               - de.awi.slurm-monitor
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_ID_BASE)
         PRODUCT_NAME: SlurmMonitor
         CODE_SIGN_ENTITLEMENTS: App/SlurmMonitor.entitlements
     dependencies:
@@ -91,11 +101,13 @@ targets:
           NSAllowsArbitraryLoads: true
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Read by SlurmKitConstants.appGroup; must match the entitlements.
+        SlurmMonitorAppGroup: group.$(APP_ID_BASE)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_ID_BASE).widgets
         CODE_SIGN_ENTITLEMENTS: Widgets/SlurmMonitorWidgets.entitlements
     dependencies:
       - package: SlurmKit
@@ -117,7 +129,7 @@ targets:
           - "**/*.md"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor.screenshot-tests
+        PRODUCT_BUNDLE_IDENTIFIER: $(APP_ID_BASE).screenshot-tests
         GENERATE_INFOPLIST_FILE: "YES"
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/SlurmMonitor.app/SlurmMonitor
         BUNDLE_LOADER: $(TEST_HOST)

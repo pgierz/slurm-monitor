@@ -7,11 +7,19 @@ public struct OIDCTokens: Codable, Sendable, Equatable {
     public var refreshToken: String?
     /// Expiry of the access token, `nil` when the provider did not state one.
     public var expiresAt: Date?
+    /// Token endpoint the tokens came from, so that a refresh needs no
+    /// discovery. `nil` in credentials stored by earlier versions.
+    public var tokenEndpoint: URL?
+    /// Client identifier the tokens were issued to. `nil` in credentials
+    /// stored by earlier versions.
+    public var clientId: String?
 
-    public init(accessToken: String, refreshToken: String?, expiresAt: Date?) {
+    public init(accessToken: String, refreshToken: String?, expiresAt: Date?, tokenEndpoint: URL? = nil, clientId: String? = nil) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.expiresAt = expiresAt
+        self.tokenEndpoint = tokenEndpoint
+        self.clientId = clientId
     }
 }
 
@@ -48,6 +56,13 @@ public struct KeychainError: Error, Sendable, Equatable {
     public init(status: Int32) {
         self.status = status
     }
+
+    /// True for `errSecInteractionNotAllowed`: the keychain is locked, as it
+    /// is until the device has been unlocked once after a restart. The
+    /// credentials may well be there; they just cannot be read yet.
+    public var isInteractionNotAllowed: Bool {
+        status == errSecInteractionNotAllowed
+    }
 }
 
 /// Credentials in the keychain, as one generic password item.
@@ -67,24 +82,36 @@ public struct KeychainCredentialStore: CredentialStoring {
         self.accessGroup = accessGroup
     }
 
+    /// Throws `KeychainError` when the keychain cannot be read; its
+    /// `isInteractionNotAllowed` tells a locked keychain from other failures.
     public func load() throws -> Credentials? {
-        if accessGroup != nil, let found = try? read(group: accessGroup) {
-            return try JSONDecoder().decode(Credentials.self, from: found)
+        var found: Data? = nil
+        if accessGroup != nil {
+            do {
+                found = try read(group: accessGroup)
+            } catch let error as KeychainError where error.isInteractionNotAllowed {
+                throw error
+            } catch {
+                // The keychain refuses the access group (unsigned builds);
+                // the read without one follows.
+                found = nil
+            }
         }
-        guard let data = try read(group: nil) else { return nil }
+        if found == nil {
+            found = try read(group: nil)
+        }
+        guard let data = found else { return nil }
         return try JSONDecoder().decode(Credentials.self, from: data)
     }
 
+    /// Updates the stored item in place and adds one only when none exists,
+    /// so that a reader never finds the item missing in between.
     public func save(_ credentials: Credentials) throws {
         let data = try JSONEncoder().encode(credentials)
-        if accessGroup != nil {
-            _ = SecItemDelete(baseQuery(group: accessGroup) as CFDictionary)
-            if add(data, group: accessGroup) == errSecSuccess {
-                return
-            }
+        if accessGroup != nil, write(data, group: accessGroup) == errSecSuccess {
+            return
         }
-        _ = SecItemDelete(baseQuery(group: nil) as CFDictionary)
-        let status = add(data, group: nil)
+        let status = write(data, group: nil)
         if status != errSecSuccess {
             throw KeychainError(status: status)
         }
@@ -125,6 +152,16 @@ public struct KeychainCredentialStore: CredentialStoring {
             throw KeychainError(status: status)
         }
         return item as? Data
+    }
+
+    /// `SecItemUpdate` first; `SecItemAdd` only when there is no item yet.
+    private func write(_ data: Data, group: String?) -> OSStatus {
+        let changes: [String: Any] = [kSecValueData as String: data]
+        let status = SecItemUpdate(baseQuery(group: group) as CFDictionary, changes as CFDictionary)
+        if status == errSecItemNotFound {
+            return add(data, group: group)
+        }
+        return status
     }
 
     private func add(_ data: Data, group: String?) -> OSStatus {

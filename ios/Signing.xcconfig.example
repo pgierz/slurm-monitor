@@ -3,3 +3,8 @@
 // on your own device. Find the identifier in Xcode > Settings > Accounts,
 // or in the Apple developer portal under Membership details.
 DEVELOPMENT_TEAM = ABCDE12345
+
+// Only if the identifier de.awi.slurm-monitor is already claimed by another
+// team: choose your own base. The bundle identifiers, the app group and the
+// keychain group all follow from it.
+// APP_ID_BASE = org.example.slurm-monitor

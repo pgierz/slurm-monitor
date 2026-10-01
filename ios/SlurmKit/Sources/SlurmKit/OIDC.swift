@@ -46,15 +46,20 @@ public struct PKCE: Sendable, Equatable {
 public struct OIDCDiscovery: Codable, Sendable, Equatable {
     public var authorizationEndpoint: URL
     public var tokenEndpoint: URL
+    /// The issuer the document names; `discover` checks it against the
+    /// configured one.
+    public var issuer: String?
 
-    public init(authorizationEndpoint: URL, tokenEndpoint: URL) {
+    public init(authorizationEndpoint: URL, tokenEndpoint: URL, issuer: String? = nil) {
         self.authorizationEndpoint = authorizationEndpoint
         self.tokenEndpoint = tokenEndpoint
+        self.issuer = issuer
     }
 
     enum CodingKeys: String, CodingKey {
         case authorizationEndpoint = "authorization_endpoint"
         case tokenEndpoint = "token_endpoint"
+        case issuer
     }
 }
 
@@ -79,7 +84,8 @@ public struct OIDCAuthorizationRequest: Sendable, Equatable {
 
 /// Failures of the OIDC flow.
 public enum OIDCError: Error, Sendable, Equatable {
-    /// The issuer or an endpoint is not a usable URL.
+    /// The issuer or an endpoint is not a usable URL, or the discovery
+    /// document names another issuer than the configured one.
     case invalidConfiguration
     /// The provider could not be reached.
     case network
@@ -91,7 +97,9 @@ public enum OIDCError: Error, Sendable, Equatable {
     case stateMismatch
     /// The callback carries no `code`.
     case missingCode
-    /// The provider reported an error in the callback, for example `access_denied`.
+    /// The provider reported an error in the callback, for example
+    /// `access_denied`, followed by its `error_description` when it gave one
+    /// (`access_denied: The user denied the request`).
     case authorizationFailed(String)
 }
 
@@ -113,7 +121,27 @@ public struct OIDCClient: Sendable {
         return URL(string: trimmed + "/.well-known/openid-configuration")
     }
 
-    /// Fetches the discovery document of the issuer.
+    /// An issuer without surrounding white space and trailing slashes, the
+    /// form in which two issuers are compared.
+    public static func normalisedIssuer(_ issuer: String) -> String {
+        var trimmed = issuer.trimmingCharacters(in: .whitespacesAndNewlines)
+        while trimmed.hasSuffix("/") {
+            trimmed.removeLast()
+        }
+        return trimmed
+    }
+
+    /// True when the discovery document names the configured issuer,
+    /// ignoring a trailing slash. A document without an issuer does not.
+    public static func issuerMatches(_ discovery: OIDCDiscovery, configured issuer: String) -> Bool {
+        guard let stated = discovery.issuer else { return false }
+        let expected = normalisedIssuer(issuer)
+        return !expected.isEmpty && normalisedIssuer(stated) == expected
+    }
+
+    /// Fetches the discovery document of the issuer. Throws
+    /// `.invalidConfiguration` when the document names another issuer, so
+    /// that its endpoints are never used.
     public func discover(issuer: String) async throws -> OIDCDiscovery {
         guard let url = OIDCClient.discoveryURL(issuer: issuer) else {
             throw OIDCError.invalidConfiguration
@@ -122,7 +150,11 @@ public struct OIDCClient: Sendable {
         request.httpMethod = "GET"
         request.timeoutInterval = SlurmKitConstants.requestTimeout
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        return try await perform(request, as: OIDCDiscovery.self)
+        let discovery = try await perform(request, as: OIDCDiscovery.self)
+        guard OIDCClient.issuerMatches(discovery, configured: issuer) else {
+            throw OIDCError.invalidConfiguration
+        }
+        return discovery
     }
 
     /// Builds the authorisation URL. Pure; no network access. With the scope
@@ -165,7 +197,14 @@ public struct OIDCClient: Sendable {
             items.first(where: { $0.name == name })?.value
         }
         if let error = value("error") {
-            throw OIDCError.authorizationFailed(error)
+            // Providers encode the spaces of the description as `+`.
+            let description = (value("error_description") ?? "")
+                .replacingOccurrences(of: "+", with: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if description.isEmpty {
+                throw OIDCError.authorizationFailed(error)
+            }
+            throw OIDCError.authorizationFailed(error + ": " + description)
         }
         guard value("state") == expectedState else {
             throw OIDCError.stateMismatch
@@ -183,7 +222,8 @@ public struct OIDCClient: Sendable {
         return try await exchangeCode(code, verifier: request.pkce.verifier, discovery: request.discovery, clientId: request.config.clientId, now: now)
     }
 
-    /// Exchanges an authorisation code for tokens.
+    /// Exchanges an authorisation code for tokens. The tokens carry the
+    /// token endpoint and the client identifier for later refreshes.
     public func exchangeCode(_ code: String, verifier: String, discovery: OIDCDiscovery, clientId: String, redirectURI: String = SlurmKitConstants.oidcRedirectURI, now: Date = Date()) async throws -> OIDCTokens {
         let response = try await postForm(to: discovery.tokenEndpoint, fields: [
             ("grant_type", "authorization_code"),
@@ -192,18 +232,24 @@ public struct OIDCClient: Sendable {
             ("client_id", clientId),
             ("code_verifier", verifier),
         ])
-        return response.tokens(now: now, previousRefreshToken: nil)
+        return response.tokens(now: now, previousRefreshToken: nil, tokenEndpoint: discovery.tokenEndpoint, clientId: clientId)
     }
 
     /// Obtains new tokens from a refresh token. When the provider does not
     /// issue a new refresh token, the old one is kept.
     public func refresh(refreshToken: String, discovery: OIDCDiscovery, clientId: String, now: Date = Date()) async throws -> OIDCTokens {
-        let response = try await postForm(to: discovery.tokenEndpoint, fields: [
+        try await refresh(refreshToken: refreshToken, tokenEndpoint: discovery.tokenEndpoint, clientId: clientId, now: now)
+    }
+
+    /// The same with the token endpoint given directly, as stored with the
+    /// tokens: one request, no discovery.
+    public func refresh(refreshToken: String, tokenEndpoint: URL, clientId: String, now: Date = Date()) async throws -> OIDCTokens {
+        let response = try await postForm(to: tokenEndpoint, fields: [
             ("grant_type", "refresh_token"),
             ("refresh_token", refreshToken),
             ("client_id", clientId),
         ])
-        return response.tokens(now: now, previousRefreshToken: refreshToken)
+        return response.tokens(now: now, previousRefreshToken: refreshToken, tokenEndpoint: tokenEndpoint, clientId: clientId)
     }
 
     /// Encodes fields as `application/x-www-form-urlencoded`.
@@ -227,11 +273,13 @@ public struct OIDCClient: Sendable {
             case expiresIn = "expires_in"
         }
 
-        func tokens(now: Date, previousRefreshToken: String?) -> OIDCTokens {
+        func tokens(now: Date, previousRefreshToken: String?, tokenEndpoint: URL, clientId: String) -> OIDCTokens {
             OIDCTokens(
                 accessToken: accessToken,
                 refreshToken: refreshToken ?? previousRefreshToken,
-                expiresAt: expiresIn.map { now.addingTimeInterval($0) }
+                expiresAt: expiresIn.map { now.addingTimeInterval($0) },
+                tokenEndpoint: tokenEndpoint,
+                clientId: clientId
             )
         }
     }

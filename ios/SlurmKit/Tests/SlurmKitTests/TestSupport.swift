@@ -25,6 +25,72 @@ final class StubTransport: HTTPTransport, @unchecked Sendable {
     }
 }
 
+/// A credential store that hands out a prepared sequence of answers, one per
+/// `load`, and then keeps giving the last one; `save` replaces what follows.
+/// For tests in which the stored tokens change between two reads.
+final class SequenceCredentialStore: CredentialStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var answers: [Credentials?]
+    private var saved: [Credentials] = []
+    private var loads = 0
+    /// When set, `save` throws it and stores nothing.
+    private let saveError: KeychainError?
+
+    init(_ answers: [Credentials?], saveError: KeychainError? = nil) {
+        self.answers = answers
+        self.saveError = saveError
+    }
+
+    var loadCount: Int {
+        lock.withLock { loads }
+    }
+
+    var savedCredentials: [Credentials] {
+        lock.withLock { saved }
+    }
+
+    func load() throws -> Credentials? {
+        lock.withLock { () -> Credentials? in
+            loads += 1
+            if answers.count > 1 {
+                return answers.removeFirst()
+            }
+            return answers.first ?? nil
+        }
+    }
+
+    func save(_ credentials: Credentials) throws {
+        if let saveError = saveError {
+            throw saveError
+        }
+        lock.withLock {
+            saved.append(credentials)
+            answers = [credentials]
+        }
+    }
+
+    func clear() throws {
+        lock.withLock { answers = [nil] }
+    }
+}
+
+/// A credential store whose `load` always throws.
+struct FailingCredentialStore: CredentialStoring {
+    let error: KeychainError
+
+    func load() throws -> Credentials? {
+        throw error
+    }
+
+    func save(_ credentials: Credentials) throws {
+        throw error
+    }
+
+    func clear() throws {
+        throw error
+    }
+}
+
 /// A fetcher whose five results are set by the test.
 final class StubFetcher: SlurmFetching, @unchecked Sendable {
     var settings = ServerSettings(serverURL: URL(string: "https://slurm.example.org"), username: "alice", defaultPartition: nil)
@@ -206,6 +272,12 @@ enum TestJSON {
 
     static let authConfigNoOIDC = """
     {"methods": ["token"], "oidc": null}
+    """
+
+    static let discovery = """
+    {"issuer": "https://login.example.org/oauth2",
+     "authorization_endpoint": "https://login.example.org/oauth2/authz",
+     "token_endpoint": "https://login.example.org/oauth2/token"}
     """
 
     static let me = """
