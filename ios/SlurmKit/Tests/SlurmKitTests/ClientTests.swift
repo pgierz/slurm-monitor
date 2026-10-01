@@ -26,7 +26,7 @@ final class ClientTests: XCTestCase {
 
     func testQueueRequest() async throws {
         let transport = answering(200, TestJSON.envelope(TestJSON.queue))
-        let snapshot = try await makeClient(transport).queue(partition: "mpp", user: "bob", qos: "12h")
+        let snapshot = try await makeClient(transport).queue(partition: "mpp", user: .named("bob"), qos: "12h")
         XCTAssertEqual(snapshot.data.running, 412)
         let request = try XCTUnwrap(transport.requests.first)
         XCTAssertEqual(transport.requests.count, 1)
@@ -41,6 +41,40 @@ final class ClientTests: XCTestCase {
         let transport = answering(200, TestJSON.envelope(TestJSON.queue))
         _ = try await makeClient(transport).queue()
         XCTAssertEqual(transport.requests.first?.url?.absoluteString, "https://slurm.example.org/api/v1/queue?user=alice")
+    }
+
+    private func queryItems(_ transport: StubTransport) throws -> [URLQueryItem] {
+        let url = try XCTUnwrap(transport.requests.first?.url)
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+    }
+
+    func testEveryoneSendsAStar() async throws {
+        let star = URLQueryItem(name: "user", value: "*")
+        let queue = answering(200, TestJSON.envelope(TestJSON.queue))
+        _ = try await makeClient(queue).queue(partition: "mpp", user: .everyone)
+        XCTAssertEqual(try queryItems(queue), [URLQueryItem(name: "partition", value: "mpp"), star])
+
+        let qos = answering(200, TestJSON.envelope(TestJSON.qos))
+        _ = try await makeClient(qos).qos(user: .everyone)
+        XCTAssertEqual(try queryItems(qos), [star])
+
+        // Also without a username in the settings.
+        let bare = ServerSettings(serverURL: URL(string: "https://slurm.example.org"), username: nil, defaultPartition: nil)
+        let runners = answering(200, TestJSON.envelope(TestJSON.runners))
+        _ = try await makeClient(runners, settings: bare).runners(user: .everyone)
+        XCTAssertEqual(try queryItems(runners), [star])
+    }
+
+    func testUserScopeValues() {
+        let bare = ServerSettings(serverURL: nil, username: nil, defaultPartition: nil)
+        XCTAssertEqual(UserScope.configured.queryValue(settings: settings), "alice")
+        XCTAssertNil(UserScope.configured.queryValue(settings: bare))
+        XCTAssertEqual(UserScope.named("bob").queryValue(settings: settings), "bob")
+        XCTAssertNil(UserScope.named("").queryValue(settings: settings))
+        XCTAssertEqual(UserScope.everyone.queryValue(settings: settings), "*")
+        XCTAssertEqual(UserScope.everyone.queryValue(settings: bare), UserScope.everyoneValue)
+        XCTAssertNil(UserScope.everyone.username(settings: settings))
+        XCTAssertEqual(UserScope.configured.username(settings: settings), "alice")
     }
 
     func testNoQueryWithoutParameters() async throws {
@@ -68,7 +102,7 @@ final class ClientTests: XCTestCase {
         XCTAssertEqual(gpu.requests.first?.url?.absoluteString, "https://slurm.example.org/api/v1/gpu")
 
         let runners = answering(200, TestJSON.envelope(TestJSON.runners))
-        _ = try await makeClient(runners).runners(user: "carol")
+        _ = try await makeClient(runners).runners(user: .named("carol"))
         XCTAssertEqual(runners.requests.first?.url?.absoluteString, "https://slurm.example.org/api/v1/runners?user=carol")
     }
 

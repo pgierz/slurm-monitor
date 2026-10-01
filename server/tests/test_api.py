@@ -209,6 +209,25 @@ async def test_request_filters():
         )  # fmt: skip
 
 
+async def test_user_star_means_no_particular_user_with_the_static_token():
+    harness = Harness()
+    await harness.poll()
+    async with harness.client() as client:
+
+        async def data(path: str) -> dict:
+            response = await client.get(path)
+            assert response.status_code == 200
+            return response.json()["data"]
+
+        # With the static token '*' and an absent parameter give the same answer.
+        for family in ("queue", "qos", "runners"):
+            assert await data(f"/api/v1/{family}?user=*") == await data(f"/api/v1/{family}")
+        queue = await data("/api/v1/queue?user=*&partition=mpp")
+        assert (queue["user"], queue["mine"], queue["my_jobs"]) == (None, None, [])
+        assert queue["my_jobs_total"] == 0 and queue["partition"] == "mpp"
+        assert (await data("/api/v1/queue?user=%2A"))["mine"] is None
+
+
 async def test_slurmrestd_requests_and_wrong_slurm_token():
     harness = Harness()
     await harness.poll()

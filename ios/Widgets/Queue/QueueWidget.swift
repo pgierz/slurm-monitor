@@ -34,21 +34,15 @@ enum QueueWidgetLogic {
 
     /// Loads the queue for a configuration. The scope decides only which
     /// user is sent: "mine" leaves it to the client (the username from the
-    /// settings), "everyone" sends none and caches under its own key.
+    /// settings, or the signed-in user), "everyone" asks for no particular
+    /// user and is cached under its own key.
     static func fetch(loader: SnapshotLoader, configuration: QueueConfigurationIntent) async -> WidgetContent<QueueData> {
         let partition: String? = normalisedPartition(configuration.partition)
         switch configuration.scope {
         case .mine:
-            return await loader.queue(partition: partition)
+            return await loader.queue(partition: partition, user: UserScope.configured)
         case .everyone:
-            let client = SlurmClient.live()
-            let parameters: [String: String?] = ["partition": partition, "scope": "everyone"]
-            let key: String = SnapshotCacheKey.make(family: .queue, parameters: parameters)
-            // An empty user is dropped from the query, where nil would be
-            // replaced by the username from the settings.
-            return await loader.load(key: key) {
-                try await client.queue(partition: partition, user: "", qos: nil)
-            }
+            return await loader.queue(partition: partition, user: UserScope.everyone)
         }
     }
 }

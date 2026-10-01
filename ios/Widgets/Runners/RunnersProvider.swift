@@ -7,7 +7,7 @@ import WidgetKit
 enum RunnersScope {
     /// The user from the app's settings (or the signed-in identity).
     case mine
-    /// No user is sent; all clusters are listed.
+    /// No particular user; all clusters are listed.
     case everyone
 }
 
@@ -15,21 +15,15 @@ enum RunnersScope {
 /// sample, and the two timeline providers built from them.
 enum RunnersProvider {
     /// Loads the runners family. "mine" leaves the user to the client (the
-    /// username from the settings); "everyone" sends none and caches under
-    /// its own key, so the widgets without a scope share one snapshot.
+    /// username from the settings, or the signed-in user); "everyone" asks
+    /// for no particular user and is cached under its own key, so the
+    /// widgets without a scope share one snapshot.
     static func fetch(loader: SnapshotLoader, scope: RunnersScope) async -> WidgetContent<RunnersData> {
         switch scope {
         case .mine:
-            return await loader.runners()
+            return await loader.runners(user: UserScope.configured)
         case .everyone:
-            let client = SlurmClient.live()
-            let parameters: [String: String?] = ["scope": "everyone"]
-            let key: String = SnapshotCacheKey.make(family: .runners, parameters: parameters)
-            // An empty user is dropped from the query, where nil would be
-            // replaced by the username from the settings.
-            return await loader.load(key: key) {
-                try await client.runners(user: "")
-            }
+            return await loader.runners(user: UserScope.everyone)
         }
     }
 

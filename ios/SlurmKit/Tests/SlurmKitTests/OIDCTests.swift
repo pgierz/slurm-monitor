@@ -52,6 +52,21 @@ final class OIDCTests: XCTestCase {
         ])
     }
 
+    func testAuthorizationURLAsksForConsentWithOfflineAccess() throws {
+        let pkce = PKCE(verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+        let offline = OIDCConfig(issuer: config.issuer, clientId: config.clientId, scopes: ["openid", "profile", "offline_access"])
+        let url = try XCTUnwrap(OIDCClient.authorizationURL(discovery: discovery, config: offline, pkce: pkce, state: "state-1"))
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        let prompts: [String?] = items.filter { $0.name == "prompt" }.map { $0.value }
+        XCTAssertEqual(prompts, ["consent"])
+        XCTAssertEqual(items.first(where: { $0.name == "scope" })?.value, "openid profile offline_access")
+
+        // Without the scope no prompt is asked for.
+        let plain = try XCTUnwrap(OIDCClient.authorizationURL(discovery: discovery, config: config, pkce: pkce, state: "state-1"))
+        let plainItems = URLComponents(url: plain, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        XCTAssertFalse(plainItems.contains(where: { $0.name == "prompt" }))
+    }
+
     func testAuthorizationCodeFromCallback() throws {
         let good = URL(string: "de.awi.slurm-monitor:/oauth/callback?code=abc&state=state-1")!
         XCTAssertEqual(try OIDCClient.authorizationCode(fromCallback: good, expectedState: "state-1"), "abc")

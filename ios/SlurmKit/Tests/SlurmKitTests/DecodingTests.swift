@@ -91,7 +91,8 @@ final class DecodingTests: XCTestCase {
         let data = try SlurmJSON.decode(Snapshot<GpuData>.self, from: TestJSON.envelope(TestJSON.gpuNoMetrics)).data
         XCTAssertFalse(data.metricsAvailable)
         XCTAssertNil(data.idleAllocated)
-        XCTAssertNil(data.longestWaitSeconds)
+        XCTAssertEqual(data.longestWaitSeconds, 0)
+        XCTAssertEqual(data.pendingLine, "no jobs pending")
         XCTAssertEqual(data.nodes[0].cards[0].state, .allocated)
         XCTAssertNil(data.nodes[0].cards[0].utilisation)
         XCTAssertNil(data.nodes[0].cards[0].memoryUsedMib)

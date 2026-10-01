@@ -4,6 +4,8 @@ import XCTest
 
 final class LoaderTests: XCTestCase {
     private let generatedAt = SampleData.generatedAt
+    /// The tag of the server in `StubFetcher.settings`.
+    private let serverTag = SnapshotCacheKey.serverTag(URL(string: "https://slurm.example.org")!)
 
     private func makeLoader(_ fetcher: StubFetcher, cache: InMemorySnapshotCache = InMemorySnapshotCache(), secondsAfterSnapshot: TimeInterval = 60) -> SnapshotLoader {
         let now = generatedAt.addingTimeInterval(secondsAfterSnapshot)
@@ -17,7 +19,8 @@ final class LoaderTests: XCTestCase {
         let content = await makeLoader(fetcher, cache: cache).gpu()
         XCTAssertEqual(content, .live(SampleData.gpu.data, generatedAt: generatedAt))
         XCTAssertFalse(content.isStale)
-        let entry = cache.load(key: "gpu")
+        XCTAssertNil(cache.load(key: "gpu"))
+        let entry = cache.load(key: serverTag + "-gpu")
         XCTAssertNotNil(entry)
         XCTAssertEqual(entry?.fetchedAt, generatedAt.addingTimeInterval(60))
     }
@@ -110,14 +113,69 @@ final class LoaderTests: XCTestCase {
         let cache = InMemorySnapshotCache()
         fetcher.nodesResult = .success(SampleData.nodes)
         _ = await makeLoader(fetcher, cache: cache).nodes(partition: "mpp")
-        XCTAssertNotNil(cache.load(key: "nodes-partition=mpp"))
-        XCTAssertNil(cache.load(key: "nodes"))
+        XCTAssertNotNil(cache.load(key: serverTag + "-nodes-partition=mpp"))
+        XCTAssertNil(cache.load(key: serverTag + "-nodes"))
 
         fetcher.nodesResult = .failure(.unreachable)
         let other = await makeLoader(fetcher, cache: cache).nodes(partition: "smp")
         XCTAssertEqual(other, .vpnNeeded(last: nil, generatedAt: nil))
         let same = await makeLoader(fetcher, cache: cache).nodes(partition: "mpp")
         XCTAssertEqual(same.value, SampleData.nodes.data)
+    }
+
+    func testCacheIsKeptPerServer() async {
+        let fetcher = StubFetcher()
+        let cache = InMemorySnapshotCache()
+        fetcher.gpuResult = .success(SampleData.gpu)
+        _ = await makeLoader(fetcher, cache: cache).gpu()
+
+        // Another server: the snapshot of the first one is not shown.
+        fetcher.gpuResult = .failure(.unreachable)
+        fetcher.settings.serverURL = URL(string: "https://other.example.org")
+        let elsewhere = await makeLoader(fetcher, cache: cache).gpu()
+        XCTAssertEqual(elsewhere, .vpnNeeded(last: nil, generatedAt: nil))
+
+        // Back on the first server, with or without a trailing slash, it is.
+        fetcher.settings.serverURL = URL(string: "https://slurm.example.org/")
+        let back = await makeLoader(fetcher, cache: cache).gpu()
+        XCTAssertEqual(back.value, SampleData.gpu.data)
+    }
+
+    func testCacheIsKeptPerUser() async {
+        let fetcher = StubFetcher()
+        let cache = InMemorySnapshotCache()
+        fetcher.queueResult = .success(SampleData.queue)
+        _ = await makeLoader(fetcher, cache: cache).queue()
+        XCTAssertNotNil(cache.load(key: serverTag + "-queue-user=alice"))
+
+        fetcher.queueResult = .failure(.unreachable)
+        // Naming the configured user is the same view …
+        let named = await makeLoader(fetcher, cache: cache).queue(user: .named("alice"))
+        XCTAssertEqual(named.value, SampleData.queue.data)
+        // … another user, everyone, or a changed username in the settings are not.
+        let other = await makeLoader(fetcher, cache: cache).queue(user: .named("bob"))
+        XCTAssertEqual(other, .vpnNeeded(last: nil, generatedAt: nil))
+        let everyone = await makeLoader(fetcher, cache: cache).queue(user: .everyone)
+        XCTAssertEqual(everyone, .vpnNeeded(last: nil, generatedAt: nil))
+        fetcher.settings.username = "bob"
+        let changed = await makeLoader(fetcher, cache: cache).queue()
+        XCTAssertEqual(changed, .vpnNeeded(last: nil, generatedAt: nil))
+        fetcher.settings.username = nil
+        let unset = await makeLoader(fetcher, cache: cache).queue()
+        XCTAssertEqual(unset, .vpnNeeded(last: nil, generatedAt: nil))
+    }
+
+    func testEveryoneIsCachedUnderItsOwnKey() async {
+        let fetcher = StubFetcher()
+        let cache = InMemorySnapshotCache()
+        fetcher.runnersResult = .success(SampleData.runners)
+        _ = await makeLoader(fetcher, cache: cache).runners(user: .everyone)
+        XCTAssertNotNil(cache.load(key: serverTag + "-runners-scope=everyone"))
+        XCTAssertNil(cache.load(key: serverTag + "-runners-user=alice"))
+
+        fetcher.queueResult = .success(SampleData.queue)
+        _ = await makeLoader(fetcher, cache: cache).queue(partition: "mpp", user: .everyone)
+        XCTAssertNotNil(cache.load(key: serverTag + "-queue-partition=mpp-scope=everyone"))
     }
 
     func testMapKeepsTheState() {
@@ -131,6 +189,21 @@ final class LoaderTests: XCTestCase {
         XCTAssertEqual(SnapshotCacheKey.make(family: .gpu), "gpu")
         XCTAssertEqual(SnapshotCacheKey.make(family: .queue, parameters: ["user": "alice", "partition": "mpp", "qos": nil]), "queue-partition=mpp-user=alice")
         XCTAssertEqual(SnapshotCacheKey.make(family: .qos, parameters: ["user": ""]), "qos")
+
+        let server = URL(string: "https://slurm.example.org")!
+        let tag = SnapshotCacheKey.serverTag(server)
+        XCTAssertEqual(tag.count, 17)
+        XCTAssertTrue(tag.hasPrefix("s"))
+        XCTAssertEqual(SnapshotCacheKey.make(family: .gpu, server: server), tag + "-gpu")
+        XCTAssertEqual(SnapshotCacheKey.serverTag(URL(string: "https://slurm.example.org/")!), tag)
+        XCTAssertNotEqual(SnapshotCacheKey.serverTag(URL(string: "https://slurm.example.org/monitor")!), tag)
+        XCTAssertNotEqual(SnapshotCacheKey.serverTag(URL(string: "http://slurm.example.org")!), tag)
+
+        let settings = ServerSettings(serverURL: server, username: "alice", defaultPartition: nil)
+        XCTAssertEqual(SnapshotCacheKey.make(family: .qos, parameters: SnapshotCacheKey.userParameters(.configured, settings: settings)), "qos-user=alice")
+        XCTAssertEqual(SnapshotCacheKey.make(family: .qos, parameters: SnapshotCacheKey.userParameters(.named("bob"), settings: settings)), "qos-user=bob")
+        XCTAssertEqual(SnapshotCacheKey.make(family: .qos, parameters: SnapshotCacheKey.userParameters(.everyone, settings: settings)), "qos-scope=everyone")
+        XCTAssertEqual(SnapshotCacheKey.make(family: .qos, parameters: SnapshotCacheKey.userParameters(.configured, settings: ServerSettings())), "qos")
     }
 
     func testFileCacheStoresAndLoads() throws {

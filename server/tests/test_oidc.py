@@ -110,10 +110,31 @@ async def test_valid_jwt_is_accepted_and_names_the_user(issuer):
         # … and an explicit parameter still wins.
         other = (await client.get("/api/v1/queue?user=bob")).json()["data"]
         assert other["user"] == "bob"
+        # A blank parameter counts as absent.
+        blank = (await client.get("/api/v1/queue?user=")).json()["data"]
+        assert blank["user"] == "alice"
     # The static token keeps working beside OIDC.
     assert await status(harness, STATIC_TOKEN) == 200
     # The JWKS is fetched once and then cached.
     assert issuer.requests.count("/oauth2/jwk") == 1
+
+
+async def test_user_star_overrides_the_default_of_the_signed_in_user(issuer):
+    harness = oidc_harness(issuer)
+    await harness.poll()
+    async with harness.client(issuer.token()) as client:
+        queue = (await client.get("/api/v1/queue?user=*")).json()["data"]
+        assert (queue["user"], queue["mine"], queue["my_jobs"]) == (None, None, [])
+        assert queue["my_jobs_total"] == 0 and queue["running"] > 300
+        qos = (await client.get("/api/v1/qos?user=*")).json()["data"]
+        assert (qos["user"], qos["account"], qos["fairshare"]) == (None, None, None)
+        assert qos["qos"]
+        runners = (await client.get("/api/v1/runners?user=*")).json()["data"]
+        owners = {cluster["owner"] for cluster in runners["dask"]["clusters"]}
+        assert "alice" in owners and len(owners) > 1
+        assert runners["ci"]["runners_alive"] == 4
+        # The identity itself is untouched.
+        assert (await client.get("/api/v1/me")).json()["username"] == "alice"
 
 
 async def test_rejected_jwts(issuer):
@@ -154,9 +175,12 @@ async def test_required_entitlement(issuer):
     await harness.poll()
     allowed = issuer.token(eduperson_entitlement=[ENTITLEMENT, "urn:other"])
     by_group = issuer.token(groups=ENTITLEMENT)
+    by_entitlements = issuer.token(entitlements=[ENTITLEMENT])
     denied = issuer.token(eduperson_entitlement=["urn:other"])
     assert await status(harness, allowed) == 200
     assert await status(harness, by_group) == 200
+    assert await status(harness, by_entitlements) == 200
+    assert await status(harness, issuer.token(entitlements=["urn:other"])) == 403
     async with harness.client(denied) as client:
         response = await client.get("/api/v1/queue")
     assert response.status_code == 403

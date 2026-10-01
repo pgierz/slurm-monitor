@@ -13,9 +13,15 @@ Conventions:
   `.unknown`.
 - `SlurmClient` methods throw `FetchError` only. `OIDCClient` methods throw
   `OIDCError` only.
-- `SlurmClient` sends `settings.username` as `user` when a call passes
-  `user: nil`. It never applies `settings.defaultPartition`; pass the
-  partition yourself.
+- The `user` of a fetch is a `UserScope`. `.configured` (the default) sends
+  `settings.username` when one is set, `.named("bob")` sends that name, and
+  `.everyone` sends `*`, the whole cluster's view. `SlurmClient` never
+  applies `settings.defaultPartition`; pass the partition yourself.
+- `SnapshotLoader` caches per server and per user: its keys carry a tag of
+  `settings.serverURL` and the username the scope stands for, so a snapshot
+  is never shown for another server or another user.
+- `OIDCClient.authorizationURL` adds `prompt=consent` when the scopes
+  include `offline_access`.
 - `GpuCard.temperatureC` and `GpuCard.powerW` are `Double?` (the contract
   shows whole numbers; fractional values decode as well).
 - Sample user names are `alice`, `bob`, `carol`, `dave`, `erin`.
@@ -439,22 +445,31 @@ public enum FetchError: Error, Sendable, Equatable
     case decoding(String)
     case notConfigured
 
+public enum UserScope: Sendable, Equatable
+    case configured
+    case named(String)
+    case everyone
+    public static let everyoneValue = "*"
+    public func username(settings: ServerSettings) -> String?
+    public func queryValue(settings: ServerSettings) -> String?
+
 public protocol SlurmFetching: Sendable
-    func queue(partition: String?, user: String?, qos: String?) async throws -> Snapshot<QueueData>
+    var settings: ServerSettings { get }
+    func queue(partition: String?, user: UserScope, qos: String?) async throws -> Snapshot<QueueData>
     func nodes(partition: String?) async throws -> Snapshot<NodesData>
-    func qos(user: String?) async throws -> Snapshot<QosData>
+    func qos(user: UserScope) async throws -> Snapshot<QosData>
     func gpu() async throws -> Snapshot<GpuData>
-    func runners(user: String?) async throws -> Snapshot<RunnersData>
+    func runners(user: UserScope) async throws -> Snapshot<RunnersData>
 
 public struct SlurmClient: SlurmFetching
     public let settings: ServerSettings
     public init(settings: ServerSettings, credentials: any CredentialStoring, transport: any HTTPTransport = URLSessionTransport())
     public static func live() -> SlurmClient
-    public func queue(partition: String? = nil, user: String? = nil, qos: String? = nil) async throws -> Snapshot<QueueData>
+    public func queue(partition: String? = nil, user: UserScope = .configured, qos: String? = nil) async throws -> Snapshot<QueueData>
     public func nodes(partition: String? = nil) async throws -> Snapshot<NodesData>
-    public func qos(user: String? = nil) async throws -> Snapshot<QosData>
+    public func qos(user: UserScope = .configured) async throws -> Snapshot<QosData>
     public func gpu() async throws -> Snapshot<GpuData>
-    public func runners(user: String? = nil) async throws -> Snapshot<RunnersData>
+    public func runners(user: UserScope = .configured) async throws -> Snapshot<RunnersData>
     public func health() async throws -> HealthStatus
     public func authConfig() async throws -> AuthConfig
     public func me() async throws -> Identity
@@ -522,7 +537,9 @@ public protocol SnapshotCaching: Sendable
     func removeAll()
 
 public enum SnapshotCacheKey
-    public static func make(family: WidgetFamilyKind, parameters: [String: String?] = [:]) -> String
+    public static func make(family: WidgetFamilyKind, parameters: [String: String?] = [:], server: URL? = nil) -> String
+    public static func serverTag(_ server: URL) -> String
+    public static func userParameters(_ scope: UserScope, settings: ServerSettings) -> [String: String?]
 
 public struct FileSnapshotCache: SnapshotCaching
     public let directory: URL
@@ -562,11 +579,11 @@ extension WidgetContent: Equatable where T: Equatable
 public struct SnapshotLoader: Sendable
     public init(client: any SlurmFetching, cache: any SnapshotCaching, now: @escaping @Sendable () -> Date = { Date() })
     public static func live() -> SnapshotLoader
-    public func queue(partition: String? = nil, user: String? = nil, qos: String? = nil) async -> WidgetContent<QueueData>
+    public func queue(partition: String? = nil, user: UserScope = .configured, qos: String? = nil) async -> WidgetContent<QueueData>
     public func nodes(partition: String? = nil) async -> WidgetContent<NodesData>
-    public func qos(user: String? = nil) async -> WidgetContent<QosData>
+    public func qos(user: UserScope = .configured) async -> WidgetContent<QosData>
     public func gpu() async -> WidgetContent<GpuData>
-    public func runners(user: String? = nil) async -> WidgetContent<RunnersData>
+    public func runners(user: UserScope = .configured) async -> WidgetContent<RunnersData>
     public func load<T: Codable & Sendable & Equatable>(key: String, fetch: () async throws -> Snapshot<T>) async -> WidgetContent<T>
     public func cachedSnapshot<T: Codable & Sendable & Equatable>(key: String) -> Snapshot<T>?
     public static func content<T: Codable & Sendable & Equatable>(for snapshot: Snapshot<T>, now: Date) -> WidgetContent<T>

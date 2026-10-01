@@ -137,7 +137,8 @@ its bearer token.
   `required_entitlements`, an identity lacking all of them gets 403. The
   Slurm user name comes from `username_claim` (default `preferred_username`),
   or from `username_map` where that claim differs from the cluster account.
-  With OIDC, `user` defaults to that name.
+  With OIDC, `user` defaults to that name. `user=*` asks for no particular user
+  (the whole cluster's view), with either method.
 
   When the issuer cannot be reached, the answer is `503
   {"error": "auth_unavailable"}` rather than 401, so that the app does not

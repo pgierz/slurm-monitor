@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// A cached snapshot: the envelope JSON and when it was fetched.
@@ -22,18 +23,49 @@ public protocol SnapshotCaching: Sendable {
     func removeAll()
 }
 
-/// Builds cache keys from a family and its parameter variant.
+/// Builds cache keys from a server, a family and its parameter variant.
 public enum SnapshotCacheKey {
     /// `queue` for no parameters, otherwise for example `queue-partition=mpp-user=alice`.
     /// Parameters with `nil` or empty values are left out; the rest are sorted by name.
-    public static func make(family: WidgetFamilyKind, parameters: [String: String?] = [:]) -> String {
-        var parts: [String] = [family.rawValue]
+    /// With a server the key starts with its tag, for example `s3f9c01ab77d2e4c1-queue`,
+    /// so a snapshot is never found under another server.
+    public static func make(family: WidgetFamilyKind, parameters: [String: String?] = [:], server: URL? = nil) -> String {
+        var parts: [String] = []
+        if let server = server {
+            parts.append(serverTag(server))
+        }
+        parts.append(family.rawValue)
         for name in parameters.keys.sorted() {
             if let value = parameters[name] ?? nil, !value.isEmpty {
                 parts.append(name + "=" + value)
             }
         }
         return parts.joined(separator: "-")
+    }
+
+    /// `s` and the first 16 hexadecimal digits of the SHA-256 of the server
+    /// URL, without trailing slashes.
+    public static func serverTag(_ server: URL) -> String {
+        var text = server.absoluteString
+        while text.hasSuffix("/") {
+            text.removeLast()
+        }
+        let digest = SHA256.hash(data: Data(text.utf8))
+        var hex = ""
+        for byte in digest.prefix(8) {
+            hex += String(format: "%02x", byte)
+        }
+        return "s" + hex
+    }
+
+    /// The parameters that tell apart whose view a snapshot is: `user` with
+    /// the username the scope stands for, or `scope` = `everyone`. Empty for
+    /// `.configured` without a username.
+    public static func userParameters(_ scope: UserScope, settings: ServerSettings) -> [String: String?] {
+        if scope == .everyone {
+            return ["scope": "everyone"]
+        }
+        return ["user": scope.username(settings: settings)]
     }
 }
 

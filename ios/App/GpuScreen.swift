@@ -78,8 +78,10 @@ struct GpuDetail: View {
         }
     }
 
+    /// The longest wait; a dash when nothing is pending (the server then
+    /// sends 0) or it is unknown.
     private var longestWaitText: String {
-        if data.pendingJobs == 0 {
+        if data.pendingJobs <= 0 {
             return Format.dash
         }
         return Format.durationWords(seconds: data.longestWaitSeconds)

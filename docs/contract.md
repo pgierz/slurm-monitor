@@ -43,8 +43,14 @@ removed field requires a new `schema_version`.
 | `GET /api/v1/runners` | yes | `user` (optional) | Runners |
 
 `user` selects whose jobs count as "mine". With an AAI token the server
-defaults it to the mapped Slurm username; with the static token the client
-sends the username from its settings.
+defaults an absent `user` to the mapped Slurm username; with the static token
+the client sends the username from its settings.
+
+`user=*` means "no particular user", whatever the token: `mine` is `null`
+and `my_jobs` empty (Queue), the Dask clusters of all users are listed
+(Runners), and `account` and `fairshare` are `null` (Qos). The `user` field
+of the answer is then `null`. A client that wants the whole cluster's view
+must send `*`; leaving the parameter out is not enough with an AAI token.
 
 ### Envelope
 
@@ -253,7 +259,8 @@ token).
   job `comment`, falling back to owner). The scheduler is recognised by a
   second pattern on the job name or command (default `scheduler`).
   `walltime_left_seconds` is the minimum over the running workers, `null`
-  when none run. With the `user` parameter only that user's clusters are
-  listed. Sorted by owner, then id. At most 10 clusters.
+  when none run. With a user (the `user` parameter, or the default of an
+  AAI token) only that user's clusters are listed; with `user=*` the clusters
+  of all users are. Sorted by owner, then id. At most 10 clusters.
 - JupyterHub: `near_walltime` counts sessions with less than 15 minutes left.
 - `extra`: further name-pattern kinds from the configuration; may be empty.

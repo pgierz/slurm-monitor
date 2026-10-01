@@ -16,20 +16,66 @@ public enum FetchError: Error, Sendable, Equatable {
     case notConfigured
 }
 
+/// Whose jobs count as "mine" in a fetch: the `user` query parameter.
+public enum UserScope: Sendable, Equatable {
+    /// The username from the settings, if one is set. Without one no `user`
+    /// is sent, and the server falls back to the signed-in user, if it knows one.
+    case configured
+    /// This Slurm username.
+    case named(String)
+    /// No particular user: the whole cluster's view. Sends `*`.
+    case everyone
+
+    /// The `user` value that means "no particular user".
+    public static let everyoneValue = "*"
+
+    /// The Slurm username the scope stands for with the given settings;
+    /// `nil` for `.everyone`, and for `.configured` without a username.
+    public func username(settings: ServerSettings) -> String? {
+        switch self {
+        case .configured:
+            return UserScope.nonEmpty(settings.username)
+        case .named(let name):
+            return UserScope.nonEmpty(name)
+        case .everyone:
+            return nil
+        }
+    }
+
+    /// The value sent as `user`; `nil` when the parameter is left out.
+    public func queryValue(settings: ServerSettings) -> String? {
+        switch self {
+        case .everyone:
+            return UserScope.everyoneValue
+        case .configured, .named:
+            return username(settings: settings)
+        }
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        guard let value = value, !value.isEmpty else { return nil }
+        return value
+    }
+}
+
 /// The five family fetches, as the snapshot loader needs them.
 public protocol SlurmFetching: Sendable {
-    func queue(partition: String?, user: String?, qos: String?) async throws -> Snapshot<QueueData>
+    /// The settings the fetches are made with; the loader derives the cache
+    /// identity (server and username) from them.
+    var settings: ServerSettings { get }
+    func queue(partition: String?, user: UserScope, qos: String?) async throws -> Snapshot<QueueData>
     func nodes(partition: String?) async throws -> Snapshot<NodesData>
-    func qos(user: String?) async throws -> Snapshot<QosData>
+    func qos(user: UserScope) async throws -> Snapshot<QosData>
     func gpu() async throws -> Snapshot<GpuData>
-    func runners(user: String?) async throws -> Snapshot<RunnersData>
+    func runners(user: UserScope) async throws -> Snapshot<RunnersData>
 }
 
 /// Client of the middle server. All methods throw `FetchError`.
 ///
-/// When a call does not name a `user`, the username from the settings is
-/// sent, if one is set. Partitions are sent only when given; the default
-/// partition from the settings is for the caller to apply.
+/// The `user` of a call is a `UserScope`; the default, `.configured`, sends
+/// the username from the settings, if one is set. Partitions are sent only
+/// when given; the default partition from the settings is for the caller to
+/// apply.
 public struct SlurmClient: SlurmFetching {
     public let settings: ServerSettings
     private let credentials: any CredentialStoring
@@ -48,24 +94,24 @@ public struct SlurmClient: SlurmFetching {
 
     // MARK: Family endpoints
 
-    public func queue(partition: String? = nil, user: String? = nil, qos: String? = nil) async throws -> Snapshot<QueueData> {
-        try await get(WidgetFamilyKind.queue.path, query: [("partition", partition), ("user", user ?? settings.username), ("qos", qos)], authenticated: true)
+    public func queue(partition: String? = nil, user: UserScope = .configured, qos: String? = nil) async throws -> Snapshot<QueueData> {
+        try await get(WidgetFamilyKind.queue.path, query: [("partition", partition), ("user", user.queryValue(settings: settings)), ("qos", qos)], authenticated: true)
     }
 
     public func nodes(partition: String? = nil) async throws -> Snapshot<NodesData> {
         try await get(WidgetFamilyKind.nodes.path, query: [("partition", partition)], authenticated: true)
     }
 
-    public func qos(user: String? = nil) async throws -> Snapshot<QosData> {
-        try await get(WidgetFamilyKind.qos.path, query: [("user", user ?? settings.username)], authenticated: true)
+    public func qos(user: UserScope = .configured) async throws -> Snapshot<QosData> {
+        try await get(WidgetFamilyKind.qos.path, query: [("user", user.queryValue(settings: settings))], authenticated: true)
     }
 
     public func gpu() async throws -> Snapshot<GpuData> {
         try await get(WidgetFamilyKind.gpu.path, query: [], authenticated: true)
     }
 
-    public func runners(user: String? = nil) async throws -> Snapshot<RunnersData> {
-        try await get(WidgetFamilyKind.runners.path, query: [("user", user ?? settings.username)], authenticated: true)
+    public func runners(user: UserScope = .configured) async throws -> Snapshot<RunnersData> {
+        try await get(WidgetFamilyKind.runners.path, query: [("user", user.queryValue(settings: settings))], authenticated: true)
     }
 
     // MARK: Other endpoints

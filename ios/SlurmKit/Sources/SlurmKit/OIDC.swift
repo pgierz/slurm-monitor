@@ -125,7 +125,8 @@ public struct OIDCClient: Sendable {
         return try await perform(request, as: OIDCDiscovery.self)
     }
 
-    /// Builds the authorisation URL. Pure; no network access.
+    /// Builds the authorisation URL. Pure; no network access. With the scope
+    /// `offline_access`, `prompt=consent` is added.
     public static func authorizationURL(discovery: OIDCDiscovery, config: OIDCConfig, pkce: PKCE, state: String, redirectURI: String = SlurmKitConstants.oidcRedirectURI) -> URL? {
         guard var components = URLComponents(url: discovery.authorizationEndpoint, resolvingAgainstBaseURL: false) else {
             return nil
@@ -135,6 +136,10 @@ public struct OIDCClient: Sendable {
         items.append(URLQueryItem(name: "client_id", value: config.clientId))
         items.append(URLQueryItem(name: "redirect_uri", value: redirectURI))
         items.append(URLQueryItem(name: "scope", value: config.scopes.joined(separator: " ")))
+        if config.scopes.contains("offline_access") {
+            // Helmholtz AAI issues a refresh token only together with a consent prompt.
+            items.append(URLQueryItem(name: "prompt", value: "consent"))
+        }
         items.append(URLQueryItem(name: "state", value: state))
         items.append(URLQueryItem(name: "code_challenge", value: pkce.challenge))
         items.append(URLQueryItem(name: "code_challenge_method", value: "S256"))

@@ -425,6 +425,8 @@ public struct GpuData: Codable, Sendable, Equatable {
     /// `nil` when metrics are unavailable.
     public var idleAllocated: Int?
     public var pendingJobs: Int
+    /// `0` when no GPU job is pending, as the contract sends it; `nil` is
+    /// tolerated and read as "not known".
     public var longestWaitSeconds: Int?
     public var types: [GpuTypeCount]
     public var nodes: [GpuNode]

@@ -79,34 +79,43 @@ public struct SnapshotLoader: Sendable {
         SnapshotLoader(client: SlurmClient.live(), cache: FileSnapshotCache())
     }
 
-    /// Queue snapshot; cached per partition, user and QOS.
-    public func queue(partition: String? = nil, user: String? = nil, qos: String? = nil) async -> WidgetContent<QueueData> {
-        let key = SnapshotCacheKey.make(family: .queue, parameters: ["partition": partition, "user": user, "qos": qos])
-        return await load(key: key) { try await client.queue(partition: partition, user: user, qos: qos) }
+    /// Queue snapshot; cached per server, partition, user and QOS.
+    public func queue(partition: String? = nil, user: UserScope = .configured, qos: String? = nil) async -> WidgetContent<QueueData> {
+        var parameters: [String: String?] = userParameters(user)
+        parameters.updateValue(partition, forKey: "partition")
+        parameters.updateValue(qos, forKey: "qos")
+        return await load(key: key(.queue, parameters)) { try await client.queue(partition: partition, user: user, qos: qos) }
     }
 
-    /// Nodes snapshot; cached per partition.
+    /// Nodes snapshot; cached per server and partition.
     public func nodes(partition: String? = nil) async -> WidgetContent<NodesData> {
-        let key = SnapshotCacheKey.make(family: .nodes, parameters: ["partition": partition])
-        return await load(key: key) { try await client.nodes(partition: partition) }
+        let parameters: [String: String?] = ["partition": partition]
+        return await load(key: key(.nodes, parameters)) { try await client.nodes(partition: partition) }
     }
 
-    /// QOS snapshot; cached per user.
-    public func qos(user: String? = nil) async -> WidgetContent<QosData> {
-        let key = SnapshotCacheKey.make(family: .qos, parameters: ["user": user])
-        return await load(key: key) { try await client.qos(user: user) }
+    /// QOS snapshot; cached per server and user.
+    public func qos(user: UserScope = .configured) async -> WidgetContent<QosData> {
+        await load(key: key(.qos, userParameters(user))) { try await client.qos(user: user) }
     }
 
-    /// GPU snapshot.
+    /// GPU snapshot; cached per server.
     public func gpu() async -> WidgetContent<GpuData> {
-        let key = SnapshotCacheKey.make(family: .gpu)
-        return await load(key: key) { try await client.gpu() }
+        await load(key: key(.gpu, [:])) { try await client.gpu() }
     }
 
-    /// Runners snapshot; cached per user.
-    public func runners(user: String? = nil) async -> WidgetContent<RunnersData> {
-        let key = SnapshotCacheKey.make(family: .runners, parameters: ["user": user])
-        return await load(key: key) { try await client.runners(user: user) }
+    /// Runners snapshot; cached per server and user.
+    public func runners(user: UserScope = .configured) async -> WidgetContent<RunnersData> {
+        await load(key: key(.runners, userParameters(user))) { try await client.runners(user: user) }
+    }
+
+    /// The cache key of a family fetch: the server of the client's settings,
+    /// the family and its parameters.
+    private func key(_ family: WidgetFamilyKind, _ parameters: [String: String?]) -> String {
+        SnapshotCacheKey.make(family: family, parameters: parameters, server: client.settings.serverURL)
+    }
+
+    private func userParameters(_ scope: UserScope) -> [String: String?] {
+        SnapshotCacheKey.userParameters(scope, settings: client.settings)
     }
 
     /// The general form: runs `fetch`, caches under `key`, and maps the outcome.

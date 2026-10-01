@@ -140,6 +140,19 @@ final class FormatterTests: XCTestCase {
         XCTAssertEqual(gpu.sparklineLabel, "utilisation, 6 h")
         XCTAssertEqual(gpu.currentSparklineValue, 0.71)
         XCTAssertEqual(gpu.pendingLine, "6 jobs pending · 3h 12m")
+        var waiting = gpu
+        waiting.pendingJobs = 1
+        waiting.longestWaitSeconds = 1080
+        XCTAssertEqual(waiting.pendingLine, "1 job pending · 18 min")
+        waiting.longestWaitSeconds = nil
+        XCTAssertEqual(waiting.pendingLine, "1 job pending")
+        waiting.pendingJobs = 2
+        XCTAssertEqual(waiting.pendingLine, "2 jobs pending")
+        waiting.pendingJobs = 0
+        waiting.longestWaitSeconds = 0
+        XCTAssertEqual(waiting.pendingLine, "no jobs pending")
+        waiting.longestWaitSeconds = nil
+        XCTAssertEqual(waiting.pendingLine, "no jobs pending")
         XCTAssertEqual(gpu.nodes[0].cards[0].memoryFraction ?? 0, 0.9, accuracy: 1e-9)
 
         var odd = gpu

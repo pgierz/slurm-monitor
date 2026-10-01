@@ -372,9 +372,13 @@ extension GpuData {
         sparklineValues.last
     }
 
-    /// `6 jobs pending · 3h 12m`; only the first part when no wait is known.
+    /// `6 jobs pending · 3h 12m`, `1 job pending · 18 min`; only the first
+    /// part when no wait is known, and `no jobs pending` when nothing is pending.
     public var pendingLine: String {
-        let jobs = "\(pendingJobs) jobs pending"
+        if pendingJobs <= 0 {
+            return "no jobs pending"
+        }
+        let jobs = pendingJobs == 1 ? "1 job pending" : "\(pendingJobs) jobs pending"
         guard let wait = longestWaitSeconds else { return jobs }
         return jobs + " · " + Format.durationWords(seconds: wait)
     }

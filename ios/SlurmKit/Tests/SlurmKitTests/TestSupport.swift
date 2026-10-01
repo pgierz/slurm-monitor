@@ -27,13 +27,14 @@ final class StubTransport: HTTPTransport, @unchecked Sendable {
 
 /// A fetcher whose five results are set by the test.
 final class StubFetcher: SlurmFetching, @unchecked Sendable {
+    var settings = ServerSettings(serverURL: URL(string: "https://slurm.example.org"), username: "alice", defaultPartition: nil)
     var queueResult: Result<Snapshot<QueueData>, FetchError> = .failure(.unreachable)
     var nodesResult: Result<Snapshot<NodesData>, FetchError> = .failure(.unreachable)
     var qosResult: Result<Snapshot<QosData>, FetchError> = .failure(.unreachable)
     var gpuResult: Result<Snapshot<GpuData>, FetchError> = .failure(.unreachable)
     var runnersResult: Result<Snapshot<RunnersData>, FetchError> = .failure(.unreachable)
 
-    func queue(partition: String?, user: String?, qos: String?) async throws -> Snapshot<QueueData> {
+    func queue(partition: String?, user: UserScope, qos: String?) async throws -> Snapshot<QueueData> {
         try queueResult.get()
     }
 
@@ -41,7 +42,7 @@ final class StubFetcher: SlurmFetching, @unchecked Sendable {
         try nodesResult.get()
     }
 
-    func qos(user: String?) async throws -> Snapshot<QosData> {
+    func qos(user: UserScope) async throws -> Snapshot<QosData> {
         try qosResult.get()
     }
 
@@ -49,7 +50,7 @@ final class StubFetcher: SlurmFetching, @unchecked Sendable {
         try gpuResult.get()
     }
 
-    func runners(user: String?) async throws -> Snapshot<RunnersData> {
+    func runners(user: UserScope) async throws -> Snapshot<RunnersData> {
         try runnersResult.get()
     }
 }
@@ -153,7 +154,7 @@ enum TestJSON {
     {
       "metrics_available": false,
       "total": 24, "allocated": 14, "idle_allocated": null,
-      "pending_jobs": 0, "longest_wait_seconds": null,
+      "pending_jobs": 0, "longest_wait_seconds": 0,
       "types": [
         {"type": "a100", "label": "A100", "total": 16, "allocated": 11}
       ],

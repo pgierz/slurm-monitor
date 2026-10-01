@@ -37,6 +37,10 @@ class ApiError(Exception):
         self.error = error
 
 
+# The value of the 'user' parameter that means "no particular user".
+EVERYONE = "*"
+
+
 def _blank_to_none(value: str | None) -> str | None:
     return value.strip() or None if value is not None else None
 
@@ -125,8 +129,15 @@ def create_app(
         }
 
     def effective_user(who: Identity, user: str | None) -> str | None:
-        """The 'user' parameter, or the mapped Slurm user name of an OIDC identity."""
-        return _blank_to_none(user) or who.username
+        """Whose jobs count as "mine".
+
+        The 'user' parameter when given; '*' means no particular user. Without
+        the parameter, the mapped Slurm user name of an OIDC identity.
+        """
+        named = _blank_to_none(user)
+        if named == EVERYONE:
+            return None
+        return named or who.username
 
     @app.get("/api/v1/health")
     async def health() -> dict[str, Any]:
