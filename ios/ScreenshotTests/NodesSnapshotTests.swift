@@ -37,13 +37,24 @@ final class NodesSnapshotTests: XCTestCase {
         render(stale, layout: .small, size: .small, named: "nodes-small-stale")
     }
 
-    /// The grid plan: 12 pt cells for the sample, smaller cells for more
-    /// nodes, and a cap with a count of the rest as the last resort.
+    /// The grid plan: the largest cell that fits (16 pt for the sample, 20 pt
+    /// for a handful of nodes), smaller cells for more nodes, and a cap with
+    /// a count of the rest as the last resort.
     func testGridPlanShrinksAndCaps() {
         let sample: [PartitionNodes] = SampleData.nodes.data.partitions
         let normal = NodesGridPlan.make(partitions: sample, width: 567, height: 260)
-        XCTAssertEqual(normal.cellSize, 12)
+        XCTAssertEqual(normal.cellSize, 16)
+        XCTAssertEqual(normal.gap, 4)
+        XCTAssertEqual(normal.columns, 28)
         XCTAssertEqual(normal.hiddenNodes, 0)
+
+        let few = NodesGridPlan.make(partitions: [partition(count: 40)], width: 567, height: 260)
+        XCTAssertEqual(few.cellSize, 20)
+        XCTAssertEqual(few.gap, 4)
+        XCTAssertEqual(few.hiddenNodes, 0)
+
+        XCTAssertEqual(NodesGridPlan.gap(for: 14), 3)
+        XCTAssertEqual(NodesGridPlan.gap(for: 8), 2)
 
         let many = NodesGridPlan.make(partitions: [partition(count: 900)], width: 567, height: 260)
         XCTAssertLessThan(many.cellSize, 12)

@@ -50,9 +50,8 @@ public enum SampleData {
         let times = historyTimes()
         var history: [QueueHistoryPoint] = []
         for index in 0..<times.count {
-            history.append(QueueHistoryPoint(t: times[index], running: 380 + (index * 7) % 40, pending: 78 + (index * 5) % 30))
+            history.append(QueueHistoryPoint(t: times[index], running: queueHistoryRunning[index], pending: queueHistoryPending[index]))
         }
-        history[history.count - 1] = QueueHistoryPoint(t: times[times.count - 1], running: 412, pending: 96)
 
         return QueueData(
             partition: nil,
@@ -73,17 +72,33 @@ public enum SampleData {
         )
     }
 
+    /// Running jobs over the six hours: a slow drift, ending at 412.
+    private static let queueHistoryRunning: [Int] = [
+        396, 397, 398, 398, 397, 396, 396, 395, 395, 396, 398, 400, 401, 403, 404, 405, 406, 407,
+        409, 411, 414, 416, 417, 418, 418, 417, 416, 414, 413, 412, 411, 410, 409, 407, 405, 403,
+        401, 399, 398, 398, 398, 399, 400, 400, 400, 399, 398, 397, 396, 396, 396, 395, 395, 393,
+        391, 388, 386, 383, 381, 380, 382, 384, 386, 388, 390, 391, 393, 396, 399, 403, 407, 412,
+    ]
+
+    /// Pending jobs over the six hours, ending at 96.
+    private static let queueHistoryPending: [Int] = [
+        97, 97, 97, 97, 96, 95, 94, 94, 93, 93, 91, 90, 87, 85, 83, 81, 80, 80,
+        80, 81, 81, 81, 80, 80, 80, 81, 82, 83, 84, 85, 84, 84, 82, 81, 80, 80,
+        80, 81, 81, 81, 81, 81, 81, 81, 83, 85, 87, 90, 92, 93, 94, 94, 95, 95,
+        96, 97, 98, 98, 97, 97, 95, 94, 93, 93, 94, 94, 95, 96, 96, 96, 96, 96,
+    ]
+
     // MARK: Nodes
 
     /// Nodes: 240 in total; mpp 170, smp 50, fat 12, gpu 8.
     public static let nodes: Snapshot<NodesData> = snapshot(makeNodes())
 
     private static func makeNodes() -> NodesData {
-        let gpuStates: [NodeState] = [.allocated, .allocated, .allocated, .drained, .allocated, .allocated, .idle, .idle]
+        let gpuStates: [NodeState] = [.allocated, .allocated, .allocated, .drained, .allocated, .allocated, .idle, .down]
         let partitions = [
             makePartition(name: "mpp", prefix: "prod", allocated: 148, idle: 14, drained: 6, down: 2, seed: 11),
-            makePartition(name: "smp", prefix: "smp", allocated: 40, idle: 6, drained: 3, down: 1, seed: 23),
-            makePartition(name: "fat", prefix: "fat", allocated: 5, idle: 4, drained: 1, down: 2, seed: 37),
+            makePartition(name: "smp", prefix: "smp", allocated: 38, idle: 8, drained: 3, down: 1, seed: 23),
+            makePartition(name: "fat", prefix: "fat", allocated: 7, idle: 3, drained: 1, down: 1, seed: 37),
             makePartition(name: "gpu", prefix: "gpu", states: gpuStates),
         ]
         return NodesData(total: 240, allocated: 198, idle: 26, drained: 11, down: 5, partitions: partitions)
@@ -219,11 +234,10 @@ public enum SampleData {
         let times = historyTimes()
         var history: [GpuHistoryPoint] = []
         for index in 0..<times.count {
-            let allocated = 0.42 + Double((index * 3) % 20) / 100
-            let utilisation = 0.55 + Double((index * 7) % 30) / 100
+            let allocated: Double = Double(gpuHistoryAllocatedCards[index]) / 24.0
+            let utilisation: Double = Double(gpuHistoryUtilisationPercent[index]) / 100.0
             history.append(GpuHistoryPoint(t: times[index], allocatedFraction: allocated, utilisation: utilisation))
         }
-        history[history.count - 1] = GpuHistoryPoint(t: times[times.count - 1], allocatedFraction: 0.58, utilisation: 0.71)
 
         return GpuData(
             metricsAvailable: true,
@@ -249,6 +263,23 @@ public enum SampleData {
     }
 
     /// What the server sends for the same cluster when metrics are unavailable.
+    /// Allocated cards of 24 over the six hours, ending at 14.
+    private static let gpuHistoryAllocatedCards: [Int] = [
+        14, 14, 15, 15, 15, 15, 15, 14, 14, 14, 14, 14, 14, 14, 13, 13, 13, 13,
+        13, 13, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+        12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 12, 13, 13,
+        13, 13, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
+    ]
+
+    /// Mean utilisation in per cent over the six hours: a gentle drift
+    /// between 55 and 79, ending at 71.
+    private static let gpuHistoryUtilisationPercent: [Int] = [
+        75, 77, 78, 79, 79, 78, 77, 76, 76, 75, 75, 75, 75, 74, 74, 73, 71, 71,
+        70, 70, 70, 71, 71, 72, 72, 72, 71, 71, 69, 68, 68, 67, 67, 66, 65, 64,
+        62, 60, 58, 56, 55, 55, 55, 55, 55, 56, 56, 57, 57, 57, 58, 59, 61, 62,
+        64, 66, 67, 67, 67, 67, 67, 67, 67, 68, 68, 69, 70, 70, 71, 71, 71, 71,
+    ]
+
     private static func withoutMetrics(_ data: GpuData) -> GpuData {
         var result = data
         result.metricsAvailable = false

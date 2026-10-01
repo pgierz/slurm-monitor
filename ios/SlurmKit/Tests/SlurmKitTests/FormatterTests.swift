@@ -190,6 +190,14 @@ final class FormatterTests: XCTestCase {
         XCTAssertEqual(nodes.partitions.reduce(0) { $0 + $1.idle }, nodes.idle)
         XCTAssertEqual(nodes.partitions.reduce(0) { $0 + $1.drained }, nodes.drained)
         XCTAssertEqual(nodes.partitions.reduce(0) { $0 + $1.down }, nodes.down)
+        XCTAssertEqual(nodes.partitions.map { $0.allocated }, [148, 38, 7, 5])
+        XCTAssertEqual(nodes.partitions.map { $0.idle }, [14, 8, 3, 1])
+        XCTAssertEqual(nodes.partitions.map { $0.drained }, [6, 3, 1, 1])
+        XCTAssertEqual(nodes.partitions.map { $0.down }, [2, 1, 1, 1])
+        XCTAssertEqual(nodes.allocated, 198)
+        XCTAssertEqual(nodes.idle, 26)
+        XCTAssertEqual(nodes.drained, 11)
+        XCTAssertEqual(nodes.down, 5)
         XCTAssertEqual(nodes.partitions[0].allocated, 148)
         XCTAssertEqual(nodes.partitions[0].down, 2)
         XCTAssertEqual(nodes.partitions[0].nodes.first?.name, "prod-001")
@@ -203,6 +211,8 @@ final class FormatterTests: XCTestCase {
         XCTAssertEqual(queue.myJobs.filter { $0.state == .running }.count, 12)
         XCTAssertEqual(queue.pendingByReason.reduce(0) { $0 + $1.count }, 96)
         XCTAssertEqual(queue.history.count, 72)
+        XCTAssertEqual(queue.history.last?.running, 412)
+        XCTAssertEqual(queue.history.last?.pending, 96)
 
         let gpu = SampleData.gpu.data
         let cards = gpu.nodes.flatMap { $0.cards }
@@ -211,6 +221,8 @@ final class FormatterTests: XCTestCase {
         XCTAssertEqual(cards.filter { $0.state == .idleAllocated }.count, 3)
         XCTAssertEqual(gpu.topUsers.reduce(0) { $0 + $1.cards }, 14)
         XCTAssertEqual(gpu.history.count, 72)
+        XCTAssertEqual(gpu.history.last?.utilisation, 0.71)
+        XCTAssertEqual(gpu.history.last?.allocatedFraction ?? 0, 14.0 / 24.0, accuracy: 1e-9)
 
         let plain = SampleData.gpuNoMetrics.data
         XCTAssertFalse(plain.metricsAvailable)

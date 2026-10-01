@@ -14,7 +14,7 @@ administrators or by a trial against the development instance.
 | Client type | public client (no secret), native app |
 | Flow | authorization code with PKCE (`S256`) |
 | Redirect URI | `de.awi.slurm-monitor:/oauth/callback` |
-| Scopes | `openid profile email eduperson_entitlement` |
+| Scopes | `openid profile email eduperson_entitlement offline_access` |
 | Client id | free choice at registration; the contract example uses `slurm-monitor-app` |
 
 ## Provider facts
@@ -82,6 +82,8 @@ privacy policy, a short service description.
 Scope names requested by the contract:
 
 - `openid`, `profile`, `email`: documented and in the discovery document.
+- `offline_access`: requested so that a refresh token is issued; see item 5
+  under "Not verified".
 - `eduperson_entitlement`: present in `scopes_supported` of the discovery
   document, requested by the python-social-auth Helmholtz backend, and the
   claim `eduperson_entitlement` appears in the userinfo example of the HIFIS
@@ -162,10 +164,12 @@ Plan for the userinfo path as the one that certainly works.
 4. Whether the scope `eduperson_entitlement` yields a claim of that name, or
    whether `entitlements` is what is released (see above).
 5. Refresh tokens: the documentation ties them to the scope `offline_access`
-   together with `prompt=consent`. The contract's scope list has no
-   `offline_access`, so without it the user would sign in again whenever the
-   access token expires. Whether public clients receive refresh tokens at all
-   is not documented.
+   together with `prompt=consent`. Both are in place: the contract's scope
+   list and the server's default include `offline_access`, and the app adds
+   `prompt=consent` to the authorisation request whenever that scope is
+   requested. What remains open is whether a public client receives a
+   refresh token at all; that is not documented. If it does not, the user
+   signs in again whenever the access token expires.
 6. The entitlement URN that identifies cluster users, and the format of
    `eduperson_principal_name` for AWI accounts.
 7. The exact fields of the registration form (the steps above are from the

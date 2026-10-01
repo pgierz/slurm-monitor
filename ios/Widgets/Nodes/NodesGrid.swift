@@ -14,12 +14,12 @@ struct NodesGridBlock: Identifiable {
 /// How the node grid is laid out in a given area: the cell size, the columns
 /// and what is drawn of each partition.
 ///
-/// Cells are 12 pt. When the blocks would not fit the height (more than
-/// roughly 300 nodes), the cell shrinks stepwise to 10, 8 and 6 pt. If even
-/// 6 pt does not fit, the rows that fit are drawn and the rest is counted in
-/// `hiddenNodes` ("and N more").
+/// The cell is the largest of 20, 16, 14, 12, 10, 8 and 6 pt with which all
+/// blocks fit the height, so that a small cluster fills the area and a large
+/// one still shows every node. If even 6 pt does not fit, the rows that fit
+/// are drawn and the rest is counted in `hiddenNodes` ("and N more").
 struct NodesGridPlan {
-    static let cellSizes: [CGFloat] = [12, 10, 8, 6]
+    static let cellSizes: [CGFloat] = [20, 16, 14, 12, 10, 8, 6]
     /// Between partition blocks.
     static let blockSpacing: CGFloat = 8
     /// Height of the partition label; a block is never lower.
@@ -41,7 +41,10 @@ struct NodesGridPlan {
     }
 
     static func gap(for cellSize: CGFloat) -> CGFloat {
-        cellSize >= 10 ? 3 : 2
+        if cellSize > 14 {
+            return 4
+        }
+        return cellSize >= 10 ? 3 : 2
     }
 
     static func columns(width: CGFloat, cellSize: CGFloat) -> Int {

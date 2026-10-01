@@ -96,18 +96,24 @@ struct GpuMediumView: View {
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.column) {
             leftColumn
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             sparklineColumn
                 .frame(width: GpuMediumView.sparklineWidth)
+                .frame(maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var leftColumn: some View {
+        // Three equal spacers share the free height, so that neither a void
+        // opens between the bars and the figures nor the figures stick to
+        // the bottom edge.
         VStack(alignment: .leading, spacing: 0) {
+            Spacer(minLength: 0)
             typeBars
             Spacer(minLength: 6)
             figures
+            Spacer(minLength: 0)
         }
     }
 
@@ -159,8 +165,11 @@ struct GpuMediumView: View {
     private var sparklineColumn: some View {
         VStack(alignment: .leading, spacing: 4) {
             GpuSparkline(values: data.sparklineValues, colour: Theme.running, dimmed: isStale)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             sparklineCaption
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     private var sparklineCaption: some View {

@@ -140,19 +140,22 @@ struct LockNextStartLines: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Next job start")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.headline)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .widgetAccentable()
             Text(time)
-                .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                .font(.system(size: 20, weight: .semibold))
+                .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(jobName)
-                .font(.system(size: 12, weight: .regular, design: .monospaced))
+                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -164,14 +167,17 @@ struct LockQueueLines: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.headline)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .widgetAccentable()
             Text(line)
-                .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                .font(.system(size: 18, weight: .semibold))
+                .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
