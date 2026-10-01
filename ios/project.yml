@@ -37,6 +37,7 @@ targets:
         excludes:
           - Info.plist
           - "*.entitlements"
+          - "**/*.md"
     info:
       path: App/Info.plist
       properties:
@@ -75,6 +76,7 @@ targets:
         excludes:
           - Info.plist
           - "*.entitlements"
+          - "**/*.md"
     info:
       path: Widgets/Info.plist
       properties:
@@ -104,6 +106,7 @@ targets:
           - WidgetBundle.swift
           - Info.plist
           - "*.entitlements"
+          - "**/*.md"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.awi.slurm-monitor.screenshot-tests

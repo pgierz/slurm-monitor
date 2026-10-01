@@ -6,6 +6,15 @@ import WidgetKit
 @main
 struct SlurmMonitorWidgetBundle: WidgetBundle {
     var body: some Widget {
-        PlaceholderWidget()
+        QueueWidget()
+        // Uncomment each line once its type exists (at most ten widgets here;
+        // beyond that, nest a second WidgetBundle):
+        // NodesWidget()
+        // QosWidget()
+        // GpuWidget()
+        // CiRunnersWidget()
+        // DaskWidget()
+        // JupyterHubWidget()
+        // LockScreenWidget()
     }
 }
